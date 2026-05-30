@@ -49,7 +49,7 @@ export default function Hero() {
           <span className="text-stone-50">
             {typedText}
           </span>
-          <span className="ml-1 inline-block h-10 w-1 translate-y-1 rounded-full bg-cyanGlow shadow-glow sm:h-14 lg:h-16" />
+          <span className="ml-1 inline-block h-10 w-1 translate-y-1 rounded-full bg-cyanGlow shadow-[0_0_16px_rgba(134,217,232,0.16)] sm:h-14 lg:h-16" />
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-stone-400">
           Lie_detector helps people identify suspicious synthetic media, reduce misinformation risk, and make faster trust decisions with clear confidence signals.
@@ -70,8 +70,8 @@ export default function Hero() {
         transition={{ duration: 0.7, delay: 0.12 }}
         className="relative mx-auto aspect-square w-full max-w-[520px]"
       >
-        <div className="absolute inset-0 rounded-[2rem] bg-[conic-gradient(from_160deg,rgba(34,211,238,0.55),rgba(167,139,250,0.35),rgba(251,113,133,0.35),rgba(34,211,238,0.55))] p-px shadow-violet">
-          <div className="relative h-full overflow-hidden rounded-[2rem] bg-ink/95 p-7">
+        <div className="absolute inset-0 rounded-[2rem] bg-[conic-gradient(from_160deg,rgba(134,217,232,0.24),rgba(217,154,69,0.14),rgba(255,255,255,0.08),rgba(134,217,232,0.24))] p-px shadow-[0_0_28px_rgba(134,217,232,0.08)]">
+          <div className="relative h-full overflow-hidden rounded-[2rem] bg-black/75 p-7">
             <motion.div
               className="absolute inset-x-8 top-10 z-20 h-1 rounded-full bg-cyanGlow/80 blur-sm"
               animate={{ y: [0, 370, 0] }}
@@ -82,7 +82,7 @@ export default function Hero() {
               animate={{ y: [0, 325, 0], opacity: [0.45, 0.9, 0.45] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             />
-            <div className="grid h-full place-items-center rounded-3xl border border-white/10 bg-black/30">
+            <div className="grid h-full place-items-center rounded-3xl border border-white/10 bg-black/75">
               <div className="relative grid h-72 w-72 place-items-center rounded-full border border-cyanGlow/20 bg-cyanGlow/[0.03]">
                 <motion.div
                   animate={{ rotate: 360 }}
@@ -108,7 +108,7 @@ export default function Hero() {
                     ],
                   }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="grid h-44 w-44 place-items-center rounded-[2rem] border bg-black/35"
+                  className="grid h-44 w-44 place-items-center rounded-[2rem] border bg-black/75"
                 >
                   <Hand className="h-24 w-24 text-cyanGlow drop-shadow-[0_0_22px_rgba(34,211,238,0.72)]" />
                   <motion.div
@@ -123,7 +123,7 @@ export default function Hero() {
             </div>
             <div className="absolute bottom-7 left-7 right-7 grid grid-cols-3 gap-3">
               {["Palm scan", "Threat pulse", "Metadata"].map((item) => (
-                <div key={item} className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-center text-xs text-slate-300">
+                <div key={item} className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2 text-center text-xs text-stone-300">
                   {item}
                 </div>
               ))}

@@ -16,7 +16,7 @@ export default function Contact() {
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyanGlow">Contact</p>
           <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-6xl">Help shape safer media verification</h1>
-          <p className="mt-5 text-lg leading-8 text-slate-300">
+          <p className="mt-5 text-lg leading-8 text-stone-300">
             Reach out with partnership ideas, product feedback, or suggestions for improving the demo experience.
           </p>
           <div className="mt-8 grid gap-4">
@@ -28,8 +28,8 @@ export default function Contact() {
                     <Icon className="h-5 w-5 text-cyanGlow" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm text-slate-500">{item.label}</p>
-                    <p className="truncate font-semibold text-slate-100">{item.value}</p>
+                    <p className="text-sm text-stone-500">{item.label}</p>
+                    <p className="truncate font-semibold text-stone-100">{item.value}</p>
                   </div>
                 </div>
               );

@@ -24,7 +24,7 @@ export default function Stats() {
               whileHover={{ y: -8, scale: 1.02 }}
               className={`glass-card rounded-xl p-6 transition duration-300 ${stat.glow}`}
             >
-              <span className="mb-5 grid h-12 w-12 place-items-center rounded-xl border border-white/10 bg-black/30">
+              <span className="mb-5 grid h-12 w-12 place-items-center rounded-xl border border-white/10 bg-black/75">
                 <Icon className={`h-7 w-7 ${stat.tone}`} />
               </span>
               <p className="text-3xl font-black text-stone-50">{stat.value}</p>

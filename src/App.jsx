@@ -22,7 +22,7 @@ export default function App() {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-carbon text-white">
+    <div className="min-h-screen overflow-x-hidden bg-black/75 text-[#f5f5f5]">
       <div className="fixed inset-0 -z-10 bg-radial-grid" />
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px]" />
       <Navbar />

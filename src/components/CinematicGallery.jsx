@@ -44,7 +44,7 @@ export default function CinematicGallery() {
               viewport={{ once: true, amount: 0.35 }}
               transition={{ duration: 0.65, delay: index * 0.12 }}
               whileHover={{ y: -8, scale: 1.015 }}
-              className={`absolute overflow-hidden border border-white/10 bg-black shadow-2xl shadow-black/60 ${image.className}`}
+              className={`absolute overflow-hidden border border-white/10 bg-black/75 shadow-2xl shadow-black/60 ${image.className}`}
             >
               <img
                 src={image.src}

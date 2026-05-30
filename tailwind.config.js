@@ -7,9 +7,9 @@ export default {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
-        carbon: "#020202",
-        ink: "#080806",
-        panel: "rgba(13, 19, 29, 0.68)",
+        carbon: "#000000",
+        ink: "#000000",
+        panel: "rgba(0, 0, 0, 0.75)",
         cyanGlow: "#86d9e8",
         violetGlow: "#8ea0b8",
         roseGlow: "#d46a58",
@@ -22,7 +22,7 @@ export default {
       },
       backgroundImage: {
         "radial-grid":
-          "radial-gradient(circle at 14% 18%, rgba(134,217,232,0.08), transparent 28%), radial-gradient(circle at 86% 8%, rgba(217,154,69,0.08), transparent 26%), linear-gradient(135deg, #020202 0%, #070706 52%, #020202 100%)",
+          "radial-gradient(circle at 14% 18%, rgba(134,217,232,0.045), transparent 28%), radial-gradient(circle at 86% 8%, rgba(217,154,69,0.045), transparent 26%), linear-gradient(135deg, #000000 0%, #000000 100%)",
       },
       keyframes: {
         scan: {

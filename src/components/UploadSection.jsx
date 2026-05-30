@@ -1,6 +1,22 @@
+import axios from "axios";
 import { motion } from "framer-motion";
-import { AlertTriangle, CheckCircle2, ExternalLink, FileVideo, ImagePlus, Loader2, SearchCheck, UploadCloud, X } from "lucide-react";
-import { useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  FileVideo,
+  ImagePlus,
+  Loader2,
+  SearchCheck,
+  UploadCloud,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+const API_URL = "http://localhost:5000/api/detect";
+const IMAGE_LIMIT = 10 * 1024 * 1024;
+const VIDEO_LIMIT = 50 * 1024 * 1024;
+const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/webm"]);
 
 // Later this list can be replaced with real web search or scraping API results.
 const relatedArticles = [
@@ -24,40 +40,190 @@ const relatedArticles = [
   },
 ];
 
+function validateFile(file) {
+  if (!file) return "No file selected. Please upload an image or video to analyze.";
+  if (!allowedTypes.has(file.type)) return "Unsupported file type. Please upload JPG, PNG, WEBP, MP4, MOV, or WEBM.";
+  if (file.type.startsWith("image/") && file.size > IMAGE_LIMIT) return "Image file is too large. Please upload an image under 10MB.";
+  if (file.type.startsWith("video/") && file.size > VIDEO_LIMIT) return "Video file is too large. Please upload a video under 50MB.";
+  return "";
+}
+
+function getErrorMessage(error) {
+  if (error.response?.data?.message) return error.response.data.message;
+  if (error.code === "ERR_NETWORK") return "Backend server unavailable. Please start the backend and try again.";
+  if (error.message) return error.message;
+  return "Network error. Please try again.";
+}
+
 export default function UploadSection() {
   const [state, setState] = useState("idle");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [result, setResult] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [error, setError] = useState("");
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
+  const fileInputRef = useRef(null);
+  const uploadToastShownRef = useRef(false);
 
-  const runDemo = () => {
-    setState("analyzing");
-    window.setTimeout(() => setState("done"), 2300);
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl("");
+      return undefined;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile]);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timeoutId = window.setTimeout(() => setToast(null), 4200);
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
+
+  const selectFile = (file) => {
+    const validationError = validateFile(file);
+    setResult(null);
+    setUploadProgress(0);
+    setError(validationError);
+
+    if (validationError) {
+      setSelectedFile(null);
+      setState("idle");
+      setToast({ type: "error", message: validationError });
+      return;
+    }
+
+    setSelectedFile(file);
+    setState("idle");
+    setToast(null);
   };
+
+  const handleInputChange = (event) => {
+    selectFile(event.target.files?.[0]);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    selectFile(event.dataTransfer.files?.[0]);
+  };
+
+  const analyzeMedia = async () => {
+    const validationError = validateFile(selectedFile);
+    if (validationError) {
+      setError(validationError);
+      setToast({ type: "error", message: validationError });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("media", selectedFile);
+
+    try {
+      setError("");
+      setResult(null);
+      setUploadProgress(0);
+      uploadToastShownRef.current = false;
+      setState("uploading");
+
+      const response = await axios.post(API_URL, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          if (!progressEvent.total) return;
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+          if (percent >= 100) {
+            setState("analyzing");
+            if (!uploadToastShownRef.current) {
+              uploadToastShownRef.current = true;
+              setToast({ type: "success", message: "Successfully Uploaded" });
+            }
+          }
+        },
+      });
+
+      if (!response.data?.success) {
+        throw new Error("Invalid Sightengine response. Please try another file.");
+      }
+
+      setResult(response.data);
+      setState("done");
+      setToast({ type: "success", message: "Media uploaded successfully. Analysis completed." });
+    } catch (requestError) {
+      const message = getErrorMessage(requestError);
+      setError(message);
+      setState("idle");
+      setToast({ type: "error", message });
+    }
+  };
+
+  const isBusy = state === "uploading" || state === "analyzing";
+  const isVideo = selectedFile?.type.startsWith("video/");
+  const isImage = selectedFile?.type.startsWith("image/");
 
   return (
     <section id="upload" className="container-shell py-20">
+      {toast && (
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`fixed right-4 top-24 z-[80] max-w-sm rounded-2xl border p-4 text-sm shadow-2xl backdrop-blur-2xl ${
+            toast.type === "success"
+              ? "border-mintGlow/25 bg-black/75 text-mintGlow"
+              : "border-roseGlow/25 bg-black/75 text-roseGlow"
+          }`}
+        >
+          {toast.message}
+        </motion.div>
+      )}
+
       <div className="mx-auto max-w-4xl text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyanGlow">Demo detection</p>
-        <h2 className="section-title mt-3">Upload media for a simulated authenticity scan</h2>
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyanGlow">AI detection</p>
+        <h2 className="section-title mt-3">Upload media for an authenticity scan</h2>
         <p className="section-copy mx-auto">
-          This frontend uses static demo results for now. The flow shows how image and video analysis will feel once a real model is connected.
+          Upload an image or video and Lie_detector will send it securely to the backend AI detection engine for analysis.
         </p>
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <motion.div
-          whileHover={{ y: -4 }}
-          className="glass-card rounded-3xl border-dashed p-6 sm:p-8"
-        >
-          <div className="grid min-h-[340px] place-items-center rounded-2xl border border-dashed border-cyanGlow/35 bg-black/30 p-6 text-center">
-            <div>
-              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-cyanGlow/10 shadow-glow">
+        <motion.div whileHover={{ y: -4 }} className="glass-card rounded-3xl border-dashed p-6 sm:p-8">
+          <div
+            className="grid min-h-[340px] place-items-center rounded-2xl border border-dashed border-cyanGlow/25 bg-black/75 p-6 text-center"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={handleDrop}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,.mp4,.mov,.webm,image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+              className="hidden"
+              onChange={handleInputChange}
+            />
+
+            <div className="w-full">
+              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-cyanGlow/20 bg-black/75 shadow-[0_0_16px_rgba(134,217,232,0.10)]">
                 <UploadCloud className="h-9 w-9 text-cyanGlow" />
               </div>
               <h3 className="mt-6 text-2xl font-bold text-white">Drag and drop image or video</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                Supports visual demo states for JPG, PNG, MP4, MOV, and WebM files.
+              <p className="mt-3 text-sm leading-6 text-stone-400">
+                JPG, PNG, WEBP up to 10MB. MP4, MOV, WEBM up to 50MB.
               </p>
-              <div className="mt-5 flex justify-center gap-3 text-xs text-slate-300">
+
+              {previewUrl && (
+                <div className="mx-auto mt-6 max-w-md overflow-hidden rounded-2xl border border-white/10 bg-black/75 text-left">
+                  {isImage && <img src={previewUrl} alt="Selected upload preview" className="h-48 w-full object-cover" />}
+                  {isVideo && <video src={previewUrl} className="h-48 w-full object-cover" controls />}
+                  <div className="p-4">
+                    <p className="truncate text-sm font-semibold text-white">{selectedFile.name}</p>
+                    <p className="mt-1 text-xs text-stone-500">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-5 flex justify-center gap-3 text-xs text-stone-300">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2">
                   <ImagePlus className="h-4 w-4 text-cyanGlow" /> Images
                 </span>
@@ -65,29 +231,39 @@ export default function UploadSection() {
                   <FileVideo className="h-4 w-4 text-violetGlow" /> Videos
                 </span>
               </div>
-              <button type="button" className="glow-button mt-7" onClick={runDemo}>
-                Run Demo Analysis
-              </button>
+
+              <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+                <button type="button" className="ghost-button" onClick={() => fileInputRef.current?.click()} disabled={isBusy}>
+                  Choose File
+                </button>
+                <button type="button" className="glow-button disabled:cursor-not-allowed disabled:opacity-50" onClick={analyzeMedia} disabled={!selectedFile || isBusy}>
+                  {isBusy ? "Analyzing..." : "Analyze Media"}
+                </button>
+              </div>
+
+              {error && <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-roseGlow">{error}</p>}
             </div>
           </div>
         </motion.div>
 
         <div className="glass-card rounded-3xl p-6 sm:p-8">
-          {state === "idle" && (
+          {state === "idle" && !result && (
             <div className="flex h-full min-h-[340px] flex-col justify-center">
               <AlertTriangle className="h-9 w-9 text-cyanGlow" />
               <h3 className="mt-5 text-2xl font-bold text-white">Awaiting sample media</h3>
-              <p className="mt-3 leading-7 text-slate-400">
-                Start the demo to see the analysis loader, confidence panel, related articles, and explanation card.
+              <p className="mt-3 leading-7 text-stone-400">
+                Select a valid image or video, then analyze it with the backend Sightengine integration.
               </p>
             </div>
           )}
 
-          {state === "analyzing" && (
+          {isBusy && (
             <div className="min-h-[340px]">
               <div className="flex items-center gap-3 text-cyanGlow">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="font-semibold">Analyzing media patterns...</span>
+                <span className="font-semibold">
+                  {state === "uploading" ? "Uploading media..." : "Analyzing media with AI detection engine..."}
+                </span>
               </div>
               <div className="mt-8 space-y-4">
                 <div className="h-5 w-3/4 animate-pulse rounded-full bg-white/10" />
@@ -96,39 +272,39 @@ export default function UploadSection() {
                   <div className="h-24 animate-pulse rounded-2xl bg-white/10" />
                   <div className="h-24 animate-pulse rounded-2xl bg-white/10" />
                 </div>
-                <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                  <motion.div
-                    className="h-full rounded-full bg-cyanGlow"
-                    initial={{ width: "8%" }}
-                    animate={{ width: "92%" }}
-                    transition={{ duration: 2.1, ease: "easeInOut" }}
-                  />
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-xs text-stone-400">
+                    <span>Upload progress</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                    <motion.div className="h-full rounded-full bg-cyanGlow" animate={{ width: `${uploadProgress}%` }} />
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {state === "done" && (
+          {state === "done" && result && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="min-h-[340px]">
               <div className="flex items-center gap-3 text-mintGlow">
                 <CheckCircle2 className="h-6 w-6" />
-                <span className="font-semibold">Demo analysis complete</span>
+                <span className="font-semibold">Analysis complete</span>
               </div>
               <div className="mt-7 rounded-2xl border border-roseGlow/25 bg-roseGlow/10 p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-roseGlow">Result</p>
-                <p className="mt-3 text-4xl font-black text-white">92% chance AI-generated</p>
-                <p className="mt-3 leading-7 text-slate-300">
-                  Synthetic texture repetition, lighting inconsistencies, and metadata gaps were detected in this static demo scenario.
-                </p>
+                <p className="mt-3 text-4xl font-black text-white">AI Generated Chance: {result.aiProbability}%</p>
+                <p className="mt-3 text-2xl font-bold text-stone-100">Real Media Chance: {result.realProbability}%</p>
+                <p className="mt-3 leading-7 text-stone-300">{result.label}</p>
               </div>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                  <p className="text-sm text-slate-400">Confidence level</p>
-                  <p className="mt-2 text-2xl font-bold text-cyanGlow">High</p>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+                  <p className="text-sm text-stone-400">Confidence</p>
+                  <p className="mt-2 text-2xl font-bold text-cyanGlow">{result.confidenceText}</p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                  <p className="text-sm text-slate-400">Analysis mode</p>
-                  <p className="mt-2 text-2xl font-bold text-violetGlow">Static demo</p>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+                  <p className="text-sm text-stone-400">Media type</p>
+                  <p className="mt-2 text-2xl font-bold capitalize text-violetGlow">{result.mediaType}</p>
                 </div>
               </div>
               <div className="mt-6">
@@ -138,13 +314,13 @@ export default function UploadSection() {
                 </div>
                 <div className="space-y-3">
                   {relatedArticles.map((article) => (
-                    <article key={article.title} className="rounded-2xl border border-white/10 bg-black/25 p-4 transition duration-300 hover:border-cyanGlow/30 hover:bg-white/[0.06]">
+                    <article key={article.title} className="rounded-2xl border border-white/10 bg-black/75 p-4 transition duration-300 hover:border-cyanGlow/25 hover:bg-white/[0.035]">
                       <h4 className="font-semibold leading-6 text-white">{article.title}</h4>
-                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-500">
                         <span>{article.source}</span>
                         <span>{article.date}</span>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-400">{article.snippet}</p>
+                      <p className="mt-2 text-sm leading-6 text-stone-400">{article.snippet}</p>
                       <button type="button" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyanGlow transition hover:text-white">
                         Read More <ExternalLink className="h-3.5 w-3.5" />
                       </button>
@@ -152,7 +328,7 @@ export default function UploadSection() {
                   ))}
                 </div>
               </div>
-              <div className="mt-6 rounded-2xl border border-cyanGlow/20 bg-cyanGlow/10 p-4 text-sm leading-6 text-slate-300">
+              <div className="mt-6 rounded-2xl border border-cyanGlow/15 bg-black/75 p-4 text-sm leading-6 text-stone-300">
                 Lie_detector can make mistakes. AI-based results are predictions, not guaranteed proof.
                 <button type="button" onClick={() => setDisclaimerOpen(true)} className="ml-2 font-semibold text-cyanGlow transition hover:text-white">
                   Read More
@@ -164,22 +340,18 @@ export default function UploadSection() {
       </div>
 
       {disclaimerOpen && (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 px-4 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="glass-card max-w-2xl rounded-3xl p-6 sm:p-8"
-          >
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0, y: 20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="glass-card max-w-2xl rounded-3xl p-6 sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyanGlow">Accuracy disclaimer</p>
                 <h3 className="mt-2 text-2xl font-bold text-white">Prediction, not final proof</h3>
               </div>
-              <button type="button" onClick={() => setDisclaimerOpen(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.06] text-slate-300 transition hover:text-white">
+              <button type="button" onClick={() => setDisclaimerOpen(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-black/75 text-stone-300 transition hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="mt-5 leading-8 text-slate-300">
+            <p className="mt-5 leading-8 text-stone-300">
               Lie_detector is an AI-oriented media analysis platform. The results shown by the system are based on AI models, visual patterns, metadata signals, and probability-based analysis. Because AI detection itself is not always 100% accurate, the result should not be treated as final legal or factual proof. Users should verify important media from trusted sources before making decisions or sharing content. Lie_detector aims to support awareness, reduce misinformation, and help users think critically, but it cannot guarantee perfect accuracy in every case.
             </p>
             <button type="button" onClick={() => setDisclaimerOpen(false)} className="glow-button mt-6">

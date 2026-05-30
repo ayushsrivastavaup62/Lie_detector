@@ -93,7 +93,7 @@ export default function Trending() {
           </p>
         </div>
 
-        <div className="relative min-h-[340px] overflow-hidden rounded-xl border border-white/10 bg-black/35 p-6">
+        <div className="relative min-h-[340px] overflow-hidden rounded-xl border border-white/10 bg-black/75 p-6">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:38px_38px]" />
           <motion.div
             className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyanGlow/20"
@@ -110,7 +110,7 @@ export default function Trending() {
               <RadioTower className="h-7 w-7 text-cyanGlow" />
               <span className="text-xs font-bold uppercase tracking-[0.24em] text-stone-500">Live signal map</span>
             </div>
-            <div className="mx-auto grid h-24 w-24 place-items-center rounded-full border border-white/10 bg-black/60">
+            <div className="mx-auto grid h-24 w-24 place-items-center rounded-full border border-white/10 bg-black/75">
               <ScanLine className="h-10 w-10 text-amberGlow" />
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -119,7 +119,7 @@ export default function Trending() {
                   key={item}
                   animate={{ y: [0, -8, 0] }}
                   transition={{ duration: 3.2 + index * 0.4, repeat: Infinity, ease: "easeInOut" }}
-                  className="rounded-lg border border-white/10 bg-black/50 p-3"
+                  className="rounded-lg border border-white/10 bg-black/75 p-3"
                 >
                   <Newspaper className="mb-2 h-4 w-4 text-cyanGlow" />
                   <p className="text-xs font-semibold text-stone-300">{item}</p>

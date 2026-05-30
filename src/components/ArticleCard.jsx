@@ -8,9 +8,9 @@ export default function ArticleCard({ article, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
       whileHover={{ y: -8 }}
-      className="group overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.035] shadow-2xl shadow-black/40 backdrop-blur-2xl"
+      className="group overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.025] shadow-2xl shadow-black/45 backdrop-blur-2xl"
     >
-      <div className="relative h-52 overflow-hidden bg-black">
+      <div className="relative h-52 overflow-hidden bg-black/75">
         <img
           src={article.image}
           alt={article.title}
@@ -18,10 +18,10 @@ export default function ArticleCard({ article, index }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
         <div className="absolute left-4 right-4 top-4 flex items-center justify-between gap-4">
-          <span className="rounded-full border border-white/10 bg-black/45 px-3 py-1 text-xs font-semibold text-stone-200 backdrop-blur-xl">
+          <span className="rounded-full border border-white/10 bg-black/75 px-3 py-1 text-xs font-semibold text-stone-200 backdrop-blur-xl">
             {article.category}
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-roseGlow/20 bg-black/45 px-3 py-1 text-xs font-semibold text-roseGlow backdrop-blur-xl">
+          <span className="inline-flex items-center gap-2 rounded-full border border-roseGlow/20 bg-black/75 px-3 py-1 text-xs font-semibold text-roseGlow backdrop-blur-xl">
             <ShieldAlert className="h-3.5 w-3.5" /> {article.risk}
           </span>
         </div>

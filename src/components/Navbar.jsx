@@ -15,15 +15,15 @@ export default function Navbar() {
   const navClass = ({ isActive }) =>
     `rounded-full px-4 py-2 text-sm font-semibold tracking-wide transition duration-300 ${
       isActive
-        ? "bg-cyanGlow/15 text-cyanGlow shadow-[0_0_22px_rgba(34,211,238,0.22)]"
-        : "text-slate-300 hover:-translate-y-0.5 hover:bg-white/[0.07] hover:text-white hover:shadow-[0_0_18px_rgba(167,139,250,0.18)]"
+        ? "bg-white/[0.055] text-cyanGlow shadow-[0_0_18px_rgba(134,217,232,0.12)]"
+        : "text-stone-300 hover:-translate-y-0.5 hover:bg-white/[0.045] hover:text-white"
     }`;
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.08] bg-carbon/80 shadow-[0_16px_50px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.08] bg-black/75 shadow-[0_16px_50px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
       <nav className="container-shell flex h-20 items-center justify-between">
         <NavLink to="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
-          <span className="grid h-11 w-11 place-items-center rounded-xl border border-cyanGlow/30 bg-cyanGlow/10 shadow-glow">
+          <span className="grid h-11 w-11 place-items-center rounded-xl border border-cyanGlow/25 bg-black/75 shadow-[0_0_16px_rgba(134,217,232,0.10)]">
             <ScanSearch className="h-5 w-5 text-cyanGlow" />
           </span>
           <span className="text-xl font-black tracking-wide text-stone-50 drop-shadow-[0_0_14px_rgba(134,217,232,0.16)]">
@@ -41,7 +41,7 @@ export default function Navbar() {
 
         <button
           type="button"
-          className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.06] text-white md:hidden"
+          className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-black/75 text-white md:hidden"
           onClick={() => setOpen((value) => !value)}
           aria-label="Toggle navigation menu"
         >

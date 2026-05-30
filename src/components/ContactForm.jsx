@@ -19,18 +19,18 @@ export default function ContactForm() {
   return (
     <form onSubmit={handleSubmit} className="glass-card rounded-3xl p-6 sm:p-8">
       <div className="grid gap-5 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm font-medium text-slate-300">
+        <label className="grid gap-2 text-sm font-medium text-stone-300">
           Name
-          <input value={form.name} onChange={updateField("name")} className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/60" placeholder="Your name" required />
+          <input value={form.name} onChange={updateField("name")} className="rounded-2xl border border-white/10 bg-black/75 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/45" placeholder="Your name" required />
         </label>
-        <label className="grid gap-2 text-sm font-medium text-slate-300">
+        <label className="grid gap-2 text-sm font-medium text-stone-300">
           Email
-          <input value={form.email} onChange={updateField("email")} type="email" className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/60" placeholder="you@example.com" required />
+          <input value={form.email} onChange={updateField("email")} type="email" className="rounded-2xl border border-white/10 bg-black/75 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/45" placeholder="you@example.com" required />
         </label>
       </div>
-      <label className="mt-5 grid gap-2 text-sm font-medium text-slate-300">
+      <label className="mt-5 grid gap-2 text-sm font-medium text-stone-300">
         Feedback
-        <textarea value={form.feedback} onChange={updateField("feedback")} className="min-h-36 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/60" placeholder="Tell us what would make Lie_detector more useful." required />
+        <textarea value={form.feedback} onChange={updateField("feedback")} className="min-h-36 rounded-2xl border border-white/10 bg-black/75 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/45" placeholder="Tell us what would make Lie_detector more useful." required />
       </label>
       <button type="submit" className="glow-button mt-6">
         Submit Feedback <Send className="h-4 w-4" />
