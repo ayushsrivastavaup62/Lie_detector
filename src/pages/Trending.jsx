@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Newspaper, RadioTower, ScanLine } from "lucide-react";
 import { useEffect, useState } from "react";
 import ArticleCard from "../components/ArticleCard.jsx";
+import { apiClient } from "../context/AuthContext.jsx";
 
 const ARTICLES_PER_LOAD = 3;
 
@@ -96,11 +97,11 @@ export default function Trending() {
       try {
         setLoading(true);
         setErrorMessage("");
-        const response = await fetch("http://localhost:5000/api/trending-news");
-        const data = await response.json();
+        const response = await apiClient.get("/trending-news");
+        const data = response.data;
         const liveArticles = Array.isArray(data) ? data : data.articles;
 
-        if (!response.ok || !Array.isArray(liveArticles) || !liveArticles.length) {
+        if (!Array.isArray(liveArticles) || !liveArticles.length) {
           throw new Error(data.message || "Live news could not be loaded right now.");
         }
 

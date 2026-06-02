@@ -15,16 +15,51 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
+const requiredEnvVars = [
+  "MONGO_URI",
+  "JWT_SECRET",
+  "SIGHTENGINE_API_USER",
+  "SIGHTENGINE_API_SECRET",
+  "GNEWS_API_KEY",
+  "RAZORPAY_KEY_ID",
+  "RAZORPAY_KEY_SECRET",
+  "EMAIL_USER",
+  "EMAIL_PASS",
+];
+
+function getAllowedOrigins() {
+  return [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    ...(process.env.FRONTEND_URL || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  ];
+}
+
+function validateStartupEnv() {
+  const missingVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
+
+  if (missingVars.length) {
+    throw new Error(`Missing required environment variables: ${missingVars.join(", ")}`);
+  }
+}
 
 app.use(
   cors({
     origin(origin, callback) {
+      const allowedOrigins = getAllowedOrigins();
+
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
         return;
       }
-      callback(new Error("CORS origin not allowed"));
+
+      const error = new Error("CORS origin not allowed");
+      error.statusCode = 403;
+      error.publicMessage = "CORS origin not allowed.";
+      callback(error);
     },
   })
 );
@@ -66,12 +101,18 @@ app.use((err, _req, res, _next) => {
 
 async function startServer() {
   try {
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is missing. Add it to backend/.env.");
-    }
+    validateStartupEnv();
 
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB connected");
+
+    mongoose.connection.on("error", (error) => {
+      console.error("MongoDB connection error:", error.message);
+    });
+
+    mongoose.connection.on("disconnected", () => {
+      console.warn("MongoDB disconnected. Mongoose will attempt to reconnect if possible.");
+    });
 
     app.listen(PORT, () => {
       console.log(`Lie_detector backend running on port ${PORT}`);
@@ -83,3 +124,11 @@ async function startServer() {
 }
 
 startServer();
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+});

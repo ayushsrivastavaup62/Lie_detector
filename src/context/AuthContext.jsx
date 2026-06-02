@@ -1,7 +1,7 @@
 import axios from "axios";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-const API_BASE_URL = "http://localhost:5000/api";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const TOKEN_KEY = "lieDetectorToken";
 const AuthContext = createContext(null);
 
