@@ -82,7 +82,8 @@ const sampleArticles = [
 
 export default function Trending() {
   const [articles, setArticles] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(ARTICLES_PER_LOAD);
+  const [visibleCount, setVisibleCount] = useState(3);
+  const [hasLoadedMore, setHasLoadedMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [fallbackMessage, setFallbackMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -105,14 +106,20 @@ export default function Trending() {
 
         if (active) {
           setArticles(liveArticles);
-          setVisibleCount(ARTICLES_PER_LOAD);
+          setVisibleCount(3);
+          setHasLoadedMore(false);
+          console.log("[Trending] total articles received:", liveArticles.length);
+          console.log("[Trending] current visible count:", 3);
           setFallbackMessage(data.success === false ? data.message || "Showing fallback trending articles." : "");
           setErrorMessage("");
         }
       } catch (error) {
         if (active) {
           setArticles(sampleArticles);
-          setVisibleCount(ARTICLES_PER_LOAD);
+          setVisibleCount(3);
+          setHasLoadedMore(false);
+          console.log("[Trending] total articles received:", sampleArticles.length);
+          console.log("[Trending] current visible count:", 3);
           setErrorMessage(error.message || "Live news could not be loaded right now.");
           setFallbackMessage("Live news could not be loaded right now. Showing sample articles.");
         }
@@ -188,14 +195,26 @@ export default function Trending() {
               <ArticleCard key={article.url || article.title} article={article} index={index} />
             ))}
       </div>
-      {!loading && visibleCount < articles.length && (
+      {!loading && articles.length > visibleCount && (
         <div className="mt-10 text-center">
-          <button type="button" className="ghost-button" onClick={() => setVisibleCount((count) => Math.min(count + ARTICLES_PER_LOAD, articles.length))}>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-full border border-cyanGlow/30 bg-cyanGlow/10 px-6 py-3 text-sm font-bold text-cyanGlow shadow-[0_0_24px_rgba(134,217,232,0.10)] transition duration-300 hover:-translate-y-0.5 hover:border-cyanGlow/55 hover:bg-cyanGlow/15 hover:text-white hover:shadow-[0_0_34px_rgba(134,217,232,0.20)] focus:outline-none focus:ring-2 focus:ring-cyanGlow/35 focus:ring-offset-2 focus:ring-offset-carbon"
+            onClick={() => {
+              setHasLoadedMore(true);
+              setVisibleCount((prev) => {
+                const nextVisibleCount = prev + 3;
+                console.log("[Trending] total articles received:", articles.length);
+                console.log("[Trending] current visible count:", nextVisibleCount);
+                return nextVisibleCount;
+              });
+            }}
+          >
             Read More Articles
           </button>
         </div>
       )}
-      {!loading && articles.length > 0 && visibleCount >= articles.length && (
+      {!loading && hasLoadedMore && articles.length > 0 && visibleCount >= articles.length && (
         <p className="mt-10 text-center text-sm text-stone-500">No more trending articles available.</p>
       )}
     </section>

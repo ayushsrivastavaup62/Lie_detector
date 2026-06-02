@@ -1,17 +1,20 @@
 import { motion } from "framer-motion";
 import { LogIn, Mail, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const loginMessage = location.state?.message;
+  const redirectPath = location.state?.from || "/";
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -34,7 +37,7 @@ export default function Login() {
     try {
       setSubmitting(true);
       await login(form);
-      navigate("/");
+      navigate(redirectPath, { replace: true });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -58,6 +61,8 @@ export default function Login() {
             <h1 className="mt-1 text-3xl font-black text-white">Login to Lie_detector</h1>
           </div>
         </div>
+
+        {loginMessage && <p className="mb-5 rounded-2xl border border-cyanGlow/20 bg-cyanGlow/10 p-3 text-sm text-cyanGlow">{loginMessage}</p>}
 
         <form className="space-y-5" onSubmit={handleSubmit}>
           <label className="block">

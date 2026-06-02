@@ -25,9 +25,13 @@ function AnimatedPage({ children }) {
 
 function ProtectedRoute({ children }) {
   const { isLoggedIn, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) return <section className="container-shell min-h-[calc(100vh-5rem)] py-16 sm:py-24" />;
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
+  if (!isLoggedIn) {
+    const message = location.pathname === "/trending" ? "Please login to access Trending AI News." : undefined;
+    return <Navigate to="/login" replace state={{ from: location.pathname, message }} />;
+  }
 
   return children;
 }
@@ -44,7 +48,7 @@ export default function App() {
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<AnimatedPage><Home /></AnimatedPage>} />
-            <Route path="/trending" element={<AnimatedPage><Trending /></AnimatedPage>} />
+            <Route path="/trending" element={<AnimatedPage><ProtectedRoute><Trending /></ProtectedRoute></AnimatedPage>} />
             <Route path="/about" element={<AnimatedPage><About /></AnimatedPage>} />
             <Route path="/contact" element={<AnimatedPage><Contact /></AnimatedPage>} />
             <Route path="/login" element={<AnimatedPage><Login /></AnimatedPage>} />

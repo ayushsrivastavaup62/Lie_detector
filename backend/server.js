@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const express = require("express");
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const devRoutes = require("./routes/devRoutes");
 const detectionRoutes = require("./routes/detectionRoutes");
@@ -30,6 +31,7 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 app.use("/api", authRoutes);
+app.use("/api", contactRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api", devRoutes);
 app.use("/api", detectionRoutes);

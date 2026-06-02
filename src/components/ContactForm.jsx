@@ -1,23 +1,46 @@
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { useState } from "react";
+import { apiClient } from "../context/AuthContext.jsx";
 
 export default function ContactForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", feedback: "" });
 
   const updateField = (field) => (event) => {
     setForm((current) => ({ ...current, [field]: event.target.value }));
+    setToast(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setSubmitted(true);
-    setForm({ name: "", email: "", feedback: "" });
+
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      message: form.feedback.trim(),
+    };
+
+    if (!payload.name || !payload.email || !payload.message) {
+      setToast({ type: "error", message: "Unable to send feedback. Please try again." });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await apiClient.post("/contact", payload);
+      setForm({ name: "", email: "", feedback: "" });
+      setToast({ type: "success", message: "Feedback submitted successfully." });
+    } catch {
+      setToast({ type: "error", message: "Unable to send feedback. Please try again." });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card rounded-3xl p-6 sm:p-8">
+    <form onSubmit={handleSubmit} className="glass-card self-start rounded-3xl p-6 sm:p-8">
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium text-stone-300">
           Name
@@ -32,12 +55,18 @@ export default function ContactForm() {
         Feedback
         <textarea value={form.feedback} onChange={updateField("feedback")} className="min-h-36 rounded-2xl border border-white/10 bg-black/75 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/45" placeholder="Tell us what would make Lie_detector more useful." required />
       </label>
-      <button type="submit" className="glow-button mt-6">
-        Submit Feedback <Send className="h-4 w-4" />
+      <button type="submit" className="glow-button mt-6 disabled:cursor-not-allowed disabled:opacity-60" disabled={submitting}>
+        {submitting ? "Submitting..." : "Submit Feedback"} <Send className="h-4 w-4" />
       </button>
-      {submitted && (
-        <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-5 rounded-2xl border border-mintGlow/20 bg-mintGlow/10 p-4 text-sm text-mintGlow">
-          Thank you. Your feedback has been received successfully.
+      {toast && (
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`mt-5 rounded-2xl border p-4 text-sm ${
+            toast.type === "success" ? "border-mintGlow/20 bg-mintGlow/10 text-mintGlow" : "border-roseGlow/20 bg-roseGlow/10 text-roseGlow"
+          }`}
+        >
+          {toast.message}
         </motion.p>
       )}
     </form>

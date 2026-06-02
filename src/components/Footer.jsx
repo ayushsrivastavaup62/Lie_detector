@@ -1,4 +1,4 @@
-import { Instagram, Linkedin, Mail, Phone, ScanSearch, Twitter , Github } from "lucide-react";
+import { Github, Instagram, Linkedin, Mail, Phone, ScanSearch, Twitter } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const quickLinks = [
@@ -9,11 +9,12 @@ const quickLinks = [
 ];
 
 const contacts = [
-  { label: "ayushsrivastavaup62@gmail.com", icon: Mail },
-  { label: "+91 7275794027", icon: Phone },
-  { label: "LinkedIn", icon: Linkedin },
-  { label: "Github", icon: Github },
-  { label: "X ", icon: Twitter },
+  { label: "ayushsrivastavaup62@gmail.com", icon: Mail, href: "mailto:ayushsrivastavaup62@gmail.com" },
+  { label: "+91 7275794027", icon: Phone, href: "tel:+917275794027" },
+  { label: "LinkedIn", icon: Linkedin, href: "https://www.linkedin.com/in/ayush-srivastava-3465753b2", external: true },
+  { label: "Instagram", icon: Instagram, href: "https://www.instagram.com/ayushsrivastavaup62", external: true },
+  { label: "Github", icon: Github, href: "https://github.com/ayushsrivastavaup62", external: true },
+  { label: "X", icon: Twitter, href: "https://x.com/I_am_AyushX", external: true },
 ];
 
 export default function Footer() {
@@ -54,10 +55,16 @@ export default function Footer() {
             {contacts.map((item) => {
               const Icon = item.icon;
               return (
-                <span key={item.label} className="inline-flex items-center gap-3 text-sm text-slate-400 transition hover:text-white">
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="inline-flex items-center gap-3 text-sm text-slate-400 transition hover:text-white"
+                  target={item.external ? "_blank" : undefined}
+                  rel={item.external ? "noreferrer" : undefined}
+                >
                   <Icon className="h-4 w-4 text-cyanGlow" />
                   {item.label}
-                </span>
+                </a>
               );
             })}
           </div>

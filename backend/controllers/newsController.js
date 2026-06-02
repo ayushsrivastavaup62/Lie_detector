@@ -2,7 +2,14 @@ const axios = require("axios");
 
 const GNEWS_SEARCH_URL = "https://gnews.io/api/v4/search";
 const CACHE_TTL_MS = 30 * 60 * 1000;
-const TRENDING_QUERY = "deepfake AI misinformation";
+const MAX_TRENDING_ARTICLES = 18;
+const MIN_PROGRESSIVE_ARTICLES = 9;
+const TRENDING_QUERIES = [
+  "deepfake AI misinformation",
+  "AI generated fake news",
+  "synthetic media misinformation",
+  "AI deepfake scam",
+];
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85";
 
@@ -47,6 +54,56 @@ const FALLBACK_ARTICLES = [
     source: "Lie_detector sample",
     url: "",
   },
+  {
+    title: "Fake interview clip circulates before election debate",
+    category: "Politics",
+    riskLevel: "Critical",
+    description: "Lip-sync mismatch and audio artifacts indicated a manipulated video intended to influence voters.",
+    publishedAt: "2026-05-07T00:00:00Z",
+    image: "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=85",
+    source: "Lie_detector sample",
+    url: "",
+  },
+  {
+    title: "Synthetic medical image claims drive misinformation thread",
+    category: "Health",
+    riskLevel: "High",
+    description: "AI-created clinical visuals were presented as verified evidence without credible source material.",
+    publishedAt: "2026-04-30T00:00:00Z",
+    image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=900&q=85",
+    source: "Lie_detector sample",
+    url: "",
+  },
+  {
+    title: "Generated battlefield photos miscaptioned as breaking news",
+    category: "Conflict",
+    riskLevel: "Critical",
+    description: "Reverse-image checks and lighting analysis suggested the viral images were synthetic composites.",
+    publishedAt: "2026-04-23T00:00:00Z",
+    image: "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=85",
+    source: "Lie_detector sample",
+    url: "",
+  },
+  {
+    title: "Voice-cloned emergency message targets local communities",
+    category: "Audio Trust",
+    riskLevel: "High",
+    description: "A synthetic audio clip was paired with fake captions to create urgency around a nonexistent alert.",
+    publishedAt: "2026-04-15T00:00:00Z",
+    image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=85",
+    source: "Lie_detector sample",
+    url: "",
+  },
+  {
+    title: "AI-made school notice circulates through parent groups",
+    category: "Education",
+    riskLevel: "Medium",
+    description: "The notice copied official styling but included fabricated dates, names, and unsafe instructions.",
+    publishedAt: "2026-04-08T00:00:00Z",
+    image: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=900&q=85",
+    source: "Lie_detector sample",
+    url: "",
+  },
 ];
 
 let cachedNews = null;
@@ -88,11 +145,19 @@ function dedupeArticles(articles) {
   });
 }
 
-async function fetchTrendingArticles(apiKey) {
+function buildTrendingArticles(articles) {
+  const dedupedLiveArticles = dedupeArticles(articles).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
+  const backfilledArticles =
+    dedupedLiveArticles.length >= MIN_PROGRESSIVE_ARTICLES ? dedupedLiveArticles : dedupeArticles([...dedupedLiveArticles, ...FALLBACK_ARTICLES]);
+
+  return backfilledArticles.slice(0, MAX_TRENDING_ARTICLES).map(normalizeArticle);
+}
+
+async function fetchTrendingArticlesForQuery(apiKey, query) {
   try {
     const response = await axios.get(GNEWS_SEARCH_URL, {
       params: {
-        q: TRENDING_QUERY,
+        q: query,
         lang: "en",
         max: 10,
         sortby: "publishedAt",
@@ -106,7 +171,7 @@ async function fetchTrendingArticles(apiKey) {
     console.info(
       "[GNews] Query response",
       JSON.stringify({
-        query: TRENDING_QUERY,
+        query,
         status: response.status,
         totalArticles: response.data?.totalArticles ?? null,
         articleCount: articles.length,
@@ -119,7 +184,7 @@ async function fetchTrendingArticles(apiKey) {
     console.error(
       "[GNews] Query error",
       JSON.stringify({
-        query: TRENDING_QUERY,
+        query,
         status: error.response?.status || null,
         message: error.message,
         response: error.response?.data || null,
@@ -130,9 +195,39 @@ async function fetchTrendingArticles(apiKey) {
   }
 }
 
+async function fetchTrendingArticles(apiKey) {
+  const results = await Promise.allSettled(TRENDING_QUERIES.map((query) => fetchTrendingArticlesForQuery(apiKey, query)));
+  const articles = results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+  const failures = results.filter((result) => result.status === "rejected");
+
+  console.info(
+    "[GNews] Aggregation summary",
+    JSON.stringify({
+      queryCount: TRENDING_QUERIES.length,
+      successfulQueries: results.length - failures.length,
+      failedQueries: failures.length,
+      totalArticlesCollected: articles.length,
+    })
+  );
+
+  if (!articles.length && failures.length) {
+    throw failures[0].reason;
+  }
+
+  return articles;
+}
+
 async function getTrendingNews(_req, res) {
   try {
     if (cachedNews && Date.now() < cacheExpiresAt) {
+      console.info(
+        "[GNews] total articles returned from API/cache",
+        JSON.stringify({
+          source: "cache",
+          totalArticlesReturned: cachedNews.length,
+        })
+      );
+
       res.json({
         success: true,
         articles: cachedNews,
@@ -152,17 +247,15 @@ async function getTrendingNews(_req, res) {
     }
 
     const articles = await fetchTrendingArticles(apiKey);
-    const normalizedArticles = dedupeArticles(articles)
-      .sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
-      .slice(0, 12)
-      .map(normalizeArticle);
+    const normalizedArticles = buildTrendingArticles(articles);
 
     console.info(
       "[GNews] Trending summary",
       JSON.stringify({
-        query: TRENDING_QUERY,
+        queries: TRENDING_QUERIES,
         receivedCount: articles.length,
         dedupedCount: normalizedArticles.length,
+        backfilled: normalizedArticles.length > dedupeArticles(articles).length,
       })
     );
 
@@ -176,6 +269,14 @@ async function getTrendingNews(_req, res) {
 
     cachedNews = normalizedArticles;
     cacheExpiresAt = Date.now() + CACHE_TTL_MS;
+
+    console.info(
+      "[GNews] total articles returned from API/cache",
+      JSON.stringify({
+        source: "api",
+        totalArticlesReturned: normalizedArticles.length,
+      })
+    );
 
     res.json({
       success: true,
@@ -195,6 +296,14 @@ async function getTrendingNews(_req, res) {
 
     if (error.response?.status === 429) {
       if (cachedNews?.length) {
+        console.info(
+          "[GNews] total articles returned from API/cache",
+          JSON.stringify({
+            source: "cache-rate-limit",
+            totalArticlesReturned: cachedNews.length,
+          })
+        );
+
         res.json({
           success: false,
           articles: cachedNews,
@@ -203,6 +312,14 @@ async function getTrendingNews(_req, res) {
         });
         return;
       }
+
+      console.info(
+        "[GNews] total articles returned from API/cache",
+        JSON.stringify({
+          source: "fallback-rate-limit",
+          totalArticlesReturned: FALLBACK_ARTICLES.length,
+        })
+      );
 
       res.json({
         success: false,
