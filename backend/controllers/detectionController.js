@@ -1,5 +1,6 @@
 const fs = require("fs/promises");
 const path = require("path");
+const DetectionHistory = require("../models/DetectionHistory");
 const { analyzeWithSightengine } = require("../utils/sightengineClient");
 
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
@@ -62,6 +63,17 @@ async function detectMedia(req, res, next) {
     const result = await analyzeWithSightengine(file, mediaType);
     req.user.attemptsLeft = Math.max(0, req.user.attemptsLeft - 1);
     await req.user.save();
+
+    await DetectionHistory.create({
+      user: req.user._id,
+      fileName: req.file.originalname,
+      mediaType,
+      aiProbability: result.aiProbability,
+      realProbability: result.realProbability,
+      verdict: result.label,
+      confidenceText: result.confidenceText,
+      rawResponse: result.raw,
+    });
 
     res.json({
       ...result,

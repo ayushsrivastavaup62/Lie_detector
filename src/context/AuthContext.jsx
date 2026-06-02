@@ -129,16 +129,6 @@ export function AuthProvider({ children }) {
 
   const refreshUser = async () => fetchMe();
 
-  const activateDemoPlan = async (plan) => {
-    try {
-      const response = await apiClient.post("/user/activate-demo-plan", { plan });
-      setUser(normalizeUser(response.data.user));
-      return response.data.user;
-    } catch (error) {
-      throw new Error(getErrorMessage(error));
-    }
-  };
-
   const updateUser = (updates) => {
     setUser((current) => normalizeUser({ ...current, ...updates }));
   };
@@ -159,7 +149,6 @@ export function AuthProvider({ children }) {
       logout,
       fetchMe,
       refreshUser,
-      activateDemoPlan,
       updateUser,
     }),
     [user, token, loading, fetchMe]

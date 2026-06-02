@@ -3,9 +3,11 @@ const dotenv = require("dotenv");
 const express = require("express");
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
+const devRoutes = require("./routes/devRoutes");
 const detectionRoutes = require("./routes/detectionRoutes");
 const newsRoutes = require("./routes/newsRoutes");
-const userRoutes = require("./routes/userRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 dotenv.config();
 
@@ -28,9 +30,11 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 app.use("/api", authRoutes);
+app.use("/api", dashboardRoutes);
+app.use("/api", devRoutes);
 app.use("/api", detectionRoutes);
 app.use("/api", newsRoutes);
-app.use("/api", userRoutes);
+app.use("/api", paymentRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "Lie_detector backend" });

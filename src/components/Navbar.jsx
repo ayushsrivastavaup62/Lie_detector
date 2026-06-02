@@ -68,9 +68,14 @@ export default function Navbar() {
             </NavLink>
           ))}
           {isLoggedIn && (
-            <NavLink to="/pricing" className={navClass}>
-              Purchase
-            </NavLink>
+            <>
+              <NavLink to="/dashboard" className={navClass}>
+                Dashboard
+              </NavLink>
+              <NavLink to="/pricing" className={navClass}>
+                Purchase
+              </NavLink>
+            </>
           )}
         </div>
 
@@ -148,9 +153,14 @@ export default function Navbar() {
               </NavLink>
             ))}
             {isLoggedIn && (
-              <NavLink to="/pricing" className={navClass} onClick={closeMenu}>
-                Purchase
-              </NavLink>
+              <>
+                <NavLink to="/dashboard" className={navClass} onClick={closeMenu}>
+                  Dashboard
+                </NavLink>
+                <NavLink to="/pricing" className={navClass} onClick={closeMenu}>
+                  Purchase
+                </NavLink>
+              </>
             )}
             <div className="mt-2 grid gap-2 border-t border-white/10 pt-3">
               {isLoggedIn ? (

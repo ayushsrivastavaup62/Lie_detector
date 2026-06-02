@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Footer from "./components/Footer.jsx";
 import Navbar from "./components/Navbar.jsx";
+import { useAuth } from "./context/AuthContext.jsx";
 import About from "./pages/About.jsx";
 import Contact from "./pages/Contact.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Pricing from "./pages/Pricing.jsx";
@@ -19,6 +21,15 @@ const pageMotion = {
 
 function AnimatedPage({ children }) {
   return <motion.main {...pageMotion}>{children}</motion.main>;
+}
+
+function ProtectedRoute({ children }) {
+  const { isLoggedIn, loading } = useAuth();
+
+  if (loading) return <section className="container-shell min-h-[calc(100vh-5rem)] py-16 sm:py-24" />;
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
+
+  return children;
 }
 
 export default function App() {
@@ -39,6 +50,7 @@ export default function App() {
             <Route path="/login" element={<AnimatedPage><Login /></AnimatedPage>} />
             <Route path="/signup" element={<AnimatedPage><Signup /></AnimatedPage>} />
             <Route path="/pricing" element={<AnimatedPage><Pricing /></AnimatedPage>} />
+            <Route path="/dashboard" element={<AnimatedPage><ProtectedRoute><Dashboard /></ProtectedRoute></AnimatedPage>} />
           </Routes>
         </AnimatePresence>
       </div>

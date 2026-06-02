@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Crown, Sparkles, X } from "lucide-react";
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
+import { Navigate, useNavigate } from "react-router-dom";
+import { apiClient, useAuth } from "../context/AuthContext.jsx";
 
 const plans = [
   {
@@ -21,7 +21,7 @@ const plans = [
     originalPrice: "₹149",
     badge: "Save ₹50",
     features: ["50 scans", "Image + Video scans", "Priority detection", "Get Trending AI Articles"],
-    button: "Upgrade to Starter",
+    button: "Pay ₹99",
   },
   {
     id: "pro",
@@ -30,15 +30,38 @@ const plans = [
     originalPrice: "₹249",
     badge: "Save ₹90",
     features: ["100 scans", "Image + Video scans", "Download-ready reports (coming soon)", "Get Trending AI Articles"],
-    button: "Upgrade to Pro",
+    button: "Pay ₹159",
   },
 ];
 
+function getErrorMessage(error) {
+  if (error.response?.data?.message) return error.response.data.message;
+  if (error.code === "ERR_NETWORK") return "Backend server unavailable. Please start the backend and try again.";
+  return error.message || "Payment failed. Please try again.";
+}
+
+function loadRazorpayCheckout() {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Unable to load Razorpay Checkout. Please try again."));
+    document.body.appendChild(script);
+  });
+}
+
 export default function Pricing() {
-  const { isLoggedIn, loading, plan, activateDemoPlan } = useAuth();
+  const navigate = useNavigate();
+  const { isLoggedIn, loading, plan, updateUser, user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [planError, setPlanError] = useState("");
-  const [activating, setActivating] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [toast, setToast] = useState(null);
 
   if (loading) {
     return <section className="container-shell min-h-[calc(100vh-5rem)] py-16 sm:py-24" />;
@@ -46,28 +69,98 @@ export default function Pricing() {
 
   if (!isLoggedIn) return <Navigate to="/login" replace />;
 
-  const activatePlan = async () => {
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    window.setTimeout(() => setToast(null), 4200);
+  };
+
+  const handlePaymentFailure = (message = "Payment failed. Please try again.") => {
+    setProcessing(false);
+    setPlanError(message);
+    showToast("error", "Payment failed. Please try again.");
+  };
+
+  const startPayment = async () => {
     if (!selectedPlan || selectedPlan.id === "free") return;
 
     try {
-      setActivating(true);
+      setProcessing(true);
       setPlanError("");
-      await activateDemoPlan(selectedPlan.id);
-      setSelectedPlan(null);
+      await loadRazorpayCheckout();
+
+      const orderResponse = await apiClient.post("/payment/create-order", { plan: selectedPlan.id });
+      const order = orderResponse.data;
+
+      const checkout = new window.Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Lie_detector",
+        description: selectedPlan.name,
+        order_id: order.orderId,
+        prefill: {
+          name: user?.name || user?.fullName || "",
+          email: user?.email || "",
+        },
+        theme: {
+          color: "#86d9e8",
+        },
+        handler: async (paymentResponse) => {
+          try {
+            const verifyResponse = await apiClient.post("/payment/verify", {
+              plan: selectedPlan.id,
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_signature: paymentResponse.razorpay_signature,
+            });
+
+            updateUser(verifyResponse.data.user);
+            setSelectedPlan(null);
+            setProcessing(false);
+            showToast("success", "Payment successful. Your plan has been activated.");
+            navigate("/dashboard");
+          } catch (error) {
+            handlePaymentFailure(getErrorMessage(error));
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setProcessing(false);
+          },
+        },
+      });
+
+      checkout.on("payment.failed", () => {
+        handlePaymentFailure();
+      });
+
+      checkout.open();
     } catch (error) {
-      setPlanError(error.message);
-    } finally {
-      setActivating(false);
+      handlePaymentFailure(getErrorMessage(error));
     }
   };
 
   return (
     <section className="container-shell py-16 sm:py-24">
+      {toast && (
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`fixed right-4 top-24 z-[90] max-w-sm rounded-2xl border p-4 text-sm shadow-2xl backdrop-blur-2xl ${
+            toast.type === "success"
+              ? "border-mintGlow/25 bg-black/75 text-mintGlow"
+              : "border-roseGlow/25 bg-black/75 text-roseGlow"
+          }`}
+        >
+          {toast.message}
+        </motion.div>
+      )}
+
       <div className="mx-auto max-w-3xl text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amberGlow">Purchase access</p>
         <h1 className="mt-3 text-4xl font-black tracking-tight text-stone-50 sm:text-5xl">Choose your verification pack</h1>
         <p className="section-copy mx-auto">
-          Upgrade the demo plan to unlock more scans and video detection while keeping the current Lie_detector experience intact.
+          Upgrade your verification plan to unlock more scans and video detection while keeping the current Lie_detector experience intact.
         </p>
       </div>
 
@@ -108,12 +201,12 @@ export default function Pricing() {
                 <div className="mt-auto flex justify-center sm:justify-start">
                   <button
                     type="button"
-                  className={isCurrent || isFreePlan ? "ghost-button cursor-default opacity-80" : "glow-button"}
-                  disabled={isCurrent || isFreePlan}
-                  onClick={() => {
-                    setPlanError("");
-                    setSelectedPlan(item);
-                  }}
+                    className={isCurrent || isFreePlan ? "ghost-button cursor-default opacity-80" : "glow-button"}
+                    disabled={isCurrent || isFreePlan}
+                    onClick={() => {
+                      setPlanError("");
+                      setSelectedPlan(item);
+                    }}
                   >
                     {isCurrent || isFreePlan ? "Current Plan" : item.button}
                     {!isCurrent && !isFreePlan && <Crown className="h-4 w-4" />}
@@ -143,8 +236,8 @@ export default function Pricing() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyanGlow">Demo purchase</p>
-                <h3 className="mt-2 text-2xl font-bold text-white">Payment integration coming soon.</h3>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyanGlow">Secure payment</p>
+                <h3 className="mt-2 text-2xl font-bold text-white">Complete your Razorpay payment.</h3>
               </div>
               <button type="button" onClick={() => setSelectedPlan(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-black/75 text-stone-300 transition hover:text-white">
                 <X className="h-5 w-5" />
@@ -152,13 +245,13 @@ export default function Pricing() {
             </div>
 
             <p className="mt-5 leading-7 text-stone-300">
-              {selectedPlan.name} is ready for the frontend demo. Activate it locally to update attempts and unlock video detection.
+              {selectedPlan.name} will be activated after Razorpay verifies your test-mode payment.
             </p>
             {planError && <p className="mt-4 rounded-2xl border border-roseGlow/20 bg-roseGlow/10 p-3 text-sm text-roseGlow">{planError}</p>}
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <button type="button" className="glow-button disabled:cursor-not-allowed disabled:opacity-60" onClick={activatePlan} disabled={activating}>
-                {activating ? "Activating..." : "Activate Demo Plan"} <Sparkles className="h-4 w-4" />
+              <button type="button" className="glow-button disabled:cursor-not-allowed disabled:opacity-60" onClick={startPayment} disabled={processing}>
+                {processing ? "Processing..." : selectedPlan.button} <Sparkles className="h-4 w-4" />
               </button>
               <button type="button" className="ghost-button" onClick={() => setSelectedPlan(null)}>
                 Not Now
