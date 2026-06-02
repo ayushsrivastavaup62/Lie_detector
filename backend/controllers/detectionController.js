@@ -14,6 +14,13 @@ function getMediaType(file) {
   return null;
 }
 
+function createPublicError(message, statusCode = 400) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.publicMessage = message;
+  return error;
+}
+
 async function removeTemporaryFile(file) {
   if (!file?.path) return;
   try {
@@ -28,36 +35,40 @@ async function detectMedia(req, res, next) {
 
   try {
     if (!file) {
-      const error = new Error("No file selected. Please upload an image or video to analyze.");
-      error.statusCode = 400;
-      error.publicMessage = error.message;
-      throw error;
+      throw createPublicError("No file selected. Please upload an image or video to analyze.");
     }
 
     const mediaType = getMediaType(file);
     if (!mediaType) {
-      const error = new Error("Unsupported file type. Please upload JPG, PNG, WEBP, MP4, MOV, or WEBM.");
-      error.statusCode = 400;
-      error.publicMessage = error.message;
-      throw error;
+      throw createPublicError("Unsupported file type. Please upload JPG, PNG, WEBP, MP4, MOV, or WEBM.");
     }
 
     if (mediaType === "image" && file.size > IMAGE_LIMIT) {
-      const error = new Error("Image file is too large. Please upload an image under 10MB.");
-      error.statusCode = 400;
-      error.publicMessage = error.message;
-      throw error;
+      throw createPublicError("Image file is too large. Please upload an image under 10MB.");
     }
 
     if (mediaType === "video" && file.size > VIDEO_LIMIT) {
-      const error = new Error("Video file is too large. Please upload a video under 50MB.");
-      error.statusCode = 400;
-      error.publicMessage = error.message;
-      throw error;
+      throw createPublicError("Video file is too large. Please upload a video under 50MB.");
+    }
+
+    if (req.user.attemptsLeft <= 0) {
+      throw createPublicError("Free trial limit reached. Upgrade your plan to continue scanning.", 403);
+    }
+
+    if (mediaType === "video" && (!req.user.videoEnabled || req.user.plan === "free")) {
+      throw createPublicError("Video detection is available only on paid plans.", 403);
     }
 
     const result = await analyzeWithSightengine(file, mediaType);
-    res.json(result);
+    req.user.attemptsLeft = Math.max(0, req.user.attemptsLeft - 1);
+    await req.user.save();
+
+    res.json({
+      ...result,
+      attemptsLeft: req.user.attemptsLeft,
+      plan: req.user.plan,
+      videoEnabled: req.user.videoEnabled,
+    });
   } catch (error) {
     next(error);
   } finally {

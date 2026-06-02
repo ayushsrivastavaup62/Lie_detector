@@ -36,7 +36,8 @@ Add your Sightengine credentials to `backend/.env`:
 ```env
 SIGHTENGINE_API_USER=your_api_user_here
 SIGHTENGINE_API_SECRET=your_api_secret_here
+GNEWS_API_KEY=your_gnews_api_key_here
 PORT=5000
 ```
 
-The frontend sends uploads to `http://localhost:5000/api/detect`. API keys stay only on the backend.
+The frontend sends uploads to `http://localhost:5000/api/detect` and trending news requests to `http://localhost:5000/api/trending-news`. API keys stay only on the backend.

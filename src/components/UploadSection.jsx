@@ -1,4 +1,3 @@
-import axios from "axios";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -6,14 +5,18 @@ import {
   ExternalLink,
   FileVideo,
   ImagePlus,
+  Lock,
   Loader2,
+  LogIn,
   SearchCheck,
+  UserPlus,
   UploadCloud,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { apiClient, useAuth } from "../context/AuthContext.jsx";
 
-const API_URL = "http://localhost:5000/api/detect";
 const IMAGE_LIMIT = 10 * 1024 * 1024;
 const VIDEO_LIMIT = 50 * 1024 * 1024;
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/webm"]);
@@ -56,6 +59,7 @@ function getErrorMessage(error) {
 }
 
 export default function UploadSection() {
+  const { attempts, isLoggedIn, plan, updateUser, videoEnabled } = useAuth();
   const [state, setState] = useState("idle");
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -88,15 +92,25 @@ export default function UploadSection() {
     const validationError = validateFile(file);
     setResult(null);
     setUploadProgress(0);
-    setError(validationError);
 
     if (validationError) {
+      setError(validationError);
       setSelectedFile(null);
       setState("idle");
       setToast({ type: "error", message: validationError });
       return;
     }
 
+    if (file.type.startsWith("video/") && !videoEnabled) {
+      const message = "Video detection is available only on paid plans.";
+      setError(message);
+      setSelectedFile(null);
+      setState("idle");
+      setToast({ type: "error", message });
+      return;
+    }
+
+    setError("");
     setSelectedFile(file);
     setState("idle");
     setToast(null);
@@ -112,10 +126,24 @@ export default function UploadSection() {
   };
 
   const analyzeMedia = async () => {
+    if (attempts <= 0) {
+      const message = "Free trial limit reached. Upgrade your plan to continue scanning.";
+      setError(message);
+      setToast({ type: "error", message });
+      return;
+    }
+
     const validationError = validateFile(selectedFile);
     if (validationError) {
       setError(validationError);
       setToast({ type: "error", message: validationError });
+      return;
+    }
+
+    if (selectedFile.type.startsWith("video/") && !videoEnabled) {
+      const message = "Video detection is available only on paid plans.";
+      setError(message);
+      setToast({ type: "error", message });
       return;
     }
 
@@ -129,7 +157,7 @@ export default function UploadSection() {
       uploadToastShownRef.current = false;
       setState("uploading");
 
-      const response = await axios.post(API_URL, formData, {
+      const response = await apiClient.post("/detect", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           if (!progressEvent.total) return;
@@ -151,6 +179,11 @@ export default function UploadSection() {
 
       setResult(response.data);
       setState("done");
+      updateUser({
+        attemptsLeft: response.data.attemptsLeft,
+        plan: response.data.plan,
+        videoEnabled: response.data.videoEnabled,
+      });
       setToast({ type: "success", message: "Media uploaded successfully. Analysis completed." });
     } catch (requestError) {
       const message = getErrorMessage(requestError);
@@ -163,6 +196,7 @@ export default function UploadSection() {
   const isBusy = state === "uploading" || state === "analyzing";
   const isVideo = selectedFile?.type.startsWith("video/");
   const isImage = selectedFile?.type.startsWith("image/");
+  const limitReached = attempts <= 0;
 
   return (
     <section id="upload" className="container-shell py-20">
@@ -187,6 +221,44 @@ export default function UploadSection() {
           Upload an image or video and Lie_detector will send it securely to the backend AI detection engine for analysis.
         </p>
       </div>
+
+      {!isLoggedIn ? (
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card mx-auto mt-10 max-w-3xl rounded-3xl p-6 text-center sm:p-8"
+        >
+          <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-cyanGlow/25 bg-cyanGlow/10 text-cyanGlow shadow-[0_0_18px_rgba(134,217,232,0.12)]">
+            <Lock className="h-9 w-9" />
+          </div>
+          <h3 className="mt-6 text-2xl font-black text-white">Login required to scan media.</h3>
+          <p className="mx-auto mt-3 max-w-xl leading-7 text-stone-400">
+            Create a free trial account to unlock 5 image scans and keep your demo plan state in this browser.
+          </p>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link to="/login" className="ghost-button">
+              Login <LogIn className="h-4 w-4" />
+            </Link>
+            <Link to="/signup" className="glow-button">
+              Create Account <UserPlus className="h-4 w-4" />
+            </Link>
+          </div>
+        </motion.div>
+      ) : (
+        <>
+          <div className="mx-auto mt-8 flex max-w-4xl flex-wrap items-center justify-center gap-3 text-xs font-bold uppercase tracking-[0.14em]">
+            <span className="rounded-full border border-cyanGlow/20 bg-cyanGlow/10 px-3 py-2 text-cyanGlow">
+              {plan} plan
+            </span>
+            <span className="rounded-full border border-amberGlow/20 bg-black/75 px-3 py-2 text-amberGlow">
+              {attempts} attempts remaining
+            </span>
+            {!videoEnabled && (
+              <span className="rounded-full border border-white/10 bg-black/75 px-3 py-2 text-stone-400">
+                Image upload only
+              </span>
+            )}
+          </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <motion.div whileHover={{ y: -4 }} className="glass-card rounded-3xl border-dashed p-6 sm:p-8">
@@ -236,11 +308,16 @@ export default function UploadSection() {
                 <button type="button" className="ghost-button" onClick={() => fileInputRef.current?.click()} disabled={isBusy}>
                   Choose File
                 </button>
-                <button type="button" className="glow-button disabled:cursor-not-allowed disabled:opacity-50" onClick={analyzeMedia} disabled={!selectedFile || isBusy}>
+                <button type="button" className="glow-button disabled:cursor-not-allowed disabled:opacity-50" onClick={analyzeMedia} disabled={!selectedFile || isBusy || limitReached}>
                   {isBusy ? "Analyzing..." : "Analyze Media"}
                 </button>
               </div>
 
+              {limitReached && (
+                <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-amberGlow">
+                  Free trial limit reached. Upgrade your plan to continue scanning.
+                </p>
+              )}
               {error && <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-roseGlow">{error}</p>}
             </div>
           </div>
@@ -338,6 +415,8 @@ export default function UploadSection() {
           )}
         </div>
       </div>
+        </>
+      )}
 
       {disclaimerOpen && (
         <div className="fixed inset-0 z-[70] grid place-items-center bg-black/75 px-4 backdrop-blur-sm">

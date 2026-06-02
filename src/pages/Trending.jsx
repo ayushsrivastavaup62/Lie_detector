@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { Newspaper, RadioTower, ScanLine } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ArticleCard from "../components/ArticleCard.jsx";
 
-const articles = [
+const ARTICLES_PER_LOAD = 3;
+
+const sampleArticles = [
   {
     title: "Synthetic disaster footage spreads across short-video platforms",
     category: "Public Safety",
@@ -79,8 +81,52 @@ const articles = [
 ];
 
 export default function Trending() {
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [articles, setArticles] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(ARTICLES_PER_LOAD);
+  const [loading, setLoading] = useState(true);
+  const [fallbackMessage, setFallbackMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const visibleArticles = articles.slice(0, visibleCount);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadTrendingNews() {
+      try {
+        setLoading(true);
+        setErrorMessage("");
+        const response = await fetch("http://localhost:5000/api/trending-news");
+        const data = await response.json();
+        const liveArticles = Array.isArray(data) ? data : data.articles;
+
+        if (!response.ok || !Array.isArray(liveArticles) || !liveArticles.length) {
+          throw new Error(data.message || "Live news could not be loaded right now.");
+        }
+
+        if (active) {
+          setArticles(liveArticles);
+          setVisibleCount(ARTICLES_PER_LOAD);
+          setFallbackMessage(data.success === false ? data.message || "Showing fallback trending articles." : "");
+          setErrorMessage("");
+        }
+      } catch (error) {
+        if (active) {
+          setArticles(sampleArticles);
+          setVisibleCount(ARTICLES_PER_LOAD);
+          setErrorMessage(error.message || "Live news could not be loaded right now.");
+          setFallbackMessage("Live news could not be loaded right now. Showing sample articles.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadTrendingNews();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <section className="container-shell py-16 sm:py-24">
@@ -89,7 +135,7 @@ export default function Trending() {
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amberGlow">Trending intelligence</p>
           <h1 className="mt-3 text-4xl font-black tracking-tight text-stone-50 sm:text-6xl">AI fake media reports worth watching</h1>
           <p className="mt-5 text-lg leading-8 text-stone-400">
-            Dummy editorial cards showing how Lie_detector can surface high-risk synthetic media trends for analysts, creators, and everyday users.
+            Live editorial cards showing how Lie_detector can surface high-risk synthetic media trends for analysts, creators, and everyday users.
           </p>
         </div>
 
@@ -129,18 +175,45 @@ export default function Trending() {
           </div>
         </div>
       </div>
+      {fallbackMessage && (
+        <div className="mt-8 rounded-2xl border border-amberGlow/20 bg-black/75 p-4 text-sm text-stone-300">
+          {fallbackMessage}
+          {errorMessage && <span className="ml-2 text-stone-500">({errorMessage})</span>}
+        </div>
+      )}
       <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {visibleArticles.map((article, index) => (
-          <ArticleCard key={article.title} article={article} index={index} />
-        ))}
+        {loading
+          ? Array.from({ length: 6 }).map((_, index) => <ArticleSkeleton key={index} />)
+          : visibleArticles.map((article, index) => (
+              <ArticleCard key={article.url || article.title} article={article} index={index} />
+            ))}
       </div>
-      {visibleCount < articles.length && (
+      {!loading && visibleCount < articles.length && (
         <div className="mt-10 text-center">
-          <button type="button" className="ghost-button" onClick={() => setVisibleCount((count) => Math.min(count + 3, articles.length))}>
+          <button type="button" className="ghost-button" onClick={() => setVisibleCount((count) => Math.min(count + ARTICLES_PER_LOAD, articles.length))}>
             Read More Articles
           </button>
         </div>
       )}
+      {!loading && articles.length > 0 && visibleCount >= articles.length && (
+        <p className="mt-10 text-center text-sm text-stone-500">No more trending articles available.</p>
+      )}
     </section>
+  );
+}
+
+function ArticleSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.025] shadow-2xl shadow-black/45">
+      <div className="h-52 animate-pulse bg-white/[0.06]" />
+      <div className="space-y-4 p-6">
+        <div className="h-5 w-3/4 animate-pulse rounded-full bg-white/[0.07]" />
+        <div className="h-4 w-1/3 animate-pulse rounded-full bg-white/[0.06]" />
+        <div className="space-y-2">
+          <div className="h-3 animate-pulse rounded-full bg-white/[0.05]" />
+          <div className="h-3 w-5/6 animate-pulse rounded-full bg-white/[0.05]" />
+        </div>
+      </div>
+    </div>
   );
 }

@@ -37,7 +37,7 @@ export default function ContactForm() {
       </button>
       {submitted && (
         <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-5 rounded-2xl border border-mintGlow/20 bg-mintGlow/10 p-4 text-sm text-mintGlow">
-          Thank you. Your demo feedback has been received successfully.
+          Thank you. Your feedback has been received successfully.
         </motion.p>
       )}
     </form>

@@ -1,7 +1,11 @@
 const cors = require("cors");
 const dotenv = require("dotenv");
 const express = require("express");
+const mongoose = require("mongoose");
+const authRoutes = require("./routes/authRoutes");
 const detectionRoutes = require("./routes/detectionRoutes");
+const newsRoutes = require("./routes/newsRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 dotenv.config();
 
@@ -23,20 +27,53 @@ app.use(
 );
 
 app.use(express.json({ limit: "1mb" }));
+app.use("/api", authRoutes);
 app.use("/api", detectionRoutes);
+app.use("/api", newsRoutes);
+app.use("/api", userRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "Lie_detector backend" });
 });
 
 app.use((err, _req, res, _next) => {
-  const status = err.statusCode || 500;
+  let status = err.statusCode || 500;
+  let message = err.publicMessage || err.message || "Something went wrong while processing the upload.";
+
+  if (err.code === 11000 && err.keyPattern?.email) {
+    status = 409;
+    message = "An account with this email already exists.";
+  }
+
+  if (err.name === "ValidationError") {
+    status = 400;
+    message = Object.values(err.errors)
+      .map((validationError) => validationError.message)
+      .join(" ");
+  }
+
   res.status(status).json({
     success: false,
-    message: err.publicMessage || err.message || "Something went wrong while processing the upload.",
+    message,
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Lie_detector backend running on port ${PORT}`);
-});
+async function startServer() {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is missing. Add it to backend/.env.");
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("MongoDB connected");
+
+    app.listen(PORT, () => {
+      console.log(`Lie_detector backend running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Backend startup error:", error.message);
+    process.exit(1);
+  }
+}
+
+startServer();

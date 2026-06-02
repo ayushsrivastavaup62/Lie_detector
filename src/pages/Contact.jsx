@@ -1,12 +1,12 @@
-import { Instagram, Linkedin, Mail, Phone, Twitter } from "lucide-react";
+import { Instagram, Linkedin, Mail, Phone, Twitter, Github } from "lucide-react";
 import ContactForm from "../components/ContactForm.jsx";
 
 const contactItems = [
-  { label: "Mobile", value: "+91 00000 00000", icon: Phone },
-  { label: "Email", value: "contact@lie-detector.example", icon: Mail },
-  { label: "LinkedIn", value: "linkedin.com/company/lie-detector", icon: Linkedin },
-  { label: "Instagram", value: "@lie_detector_app", icon: Instagram },
-  { label: "X / Twitter", value: "@LieDetectorAI", icon: Twitter },
+  { label: "Mobile", value: "+91 7275794027", icon: Phone },
+  { label: "Email", value: "ayushsrivastavaup62@gmail.com", icon: Mail },
+  { label: "LinkedIn", value: "www.Linkedin.com/in/ayush-srivastava-3465753b2", icon: Linkedin },
+  { label: "GitHub", value: "https://github.com/ayushsrivastavaup62", icon: Github },
+  { label: "X", value: "www.x.com/I_am_AyushX", icon: Twitter },
 ];
 
 export default function Contact() {

@@ -5,6 +5,9 @@ import Navbar from "./components/Navbar.jsx";
 import About from "./pages/About.jsx";
 import Contact from "./pages/Contact.jsx";
 import Home from "./pages/Home.jsx";
+import Login from "./pages/Login.jsx";
+import Pricing from "./pages/Pricing.jsx";
+import Signup from "./pages/Signup.jsx";
 import Trending from "./pages/Trending.jsx";
 
 const pageMotion = {
@@ -33,6 +36,9 @@ export default function App() {
             <Route path="/trending" element={<AnimatedPage><Trending /></AnimatedPage>} />
             <Route path="/about" element={<AnimatedPage><About /></AnimatedPage>} />
             <Route path="/contact" element={<AnimatedPage><Contact /></AnimatedPage>} />
+            <Route path="/login" element={<AnimatedPage><Login /></AnimatedPage>} />
+            <Route path="/signup" element={<AnimatedPage><Signup /></AnimatedPage>} />
+            <Route path="/pricing" element={<AnimatedPage><Pricing /></AnimatedPage>} />
           </Routes>
         </AnimatePresence>
       </div>
