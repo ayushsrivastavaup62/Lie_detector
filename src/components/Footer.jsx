@@ -1,4 +1,4 @@
-import { Instagram, Linkedin, Mail, Phone, ScanSearch, Twitter } from "lucide-react";
+import { Instagram, Linkedin, Mail, Phone, ScanSearch, Twitter , Github } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const quickLinks = [
@@ -9,11 +9,11 @@ const quickLinks = [
 ];
 
 const contacts = [
-  { label: "contact@lie-detector.example", icon: Mail },
-  { label: "+91 00000 00000", icon: Phone },
+  { label: "ayushsrivastavaup62@gmail.com", icon: Mail },
+  { label: "+91 7275794027", icon: Phone },
   { label: "LinkedIn", icon: Linkedin },
-  { label: "Instagram", icon: Instagram },
-  { label: "X / Twitter", icon: Twitter },
+  { label: "Github", icon: Github },
+  { label: "X ", icon: Twitter },
 ];
 
 export default function Footer() {
