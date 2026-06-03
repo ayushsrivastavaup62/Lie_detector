@@ -21,34 +21,26 @@ const IMAGE_LIMIT = 10 * 1024 * 1024;
 const VIDEO_LIMIT = 50 * 1024 * 1024;
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/webm"]);
 
-// Later this list can be replaced with real web search or scraping API results.
-const relatedArticles = [
-  {
-    title: "How AI-generated images are spreading misinformation online",
-    source: "Digital Trust Review",
-    snippet: "Analysts explain how synthetic visuals can quickly influence public perception when shared without verification.",
-    date: "May 22, 2026",
-  },
-  {
-    title: "Deepfake videos create new challenges for digital trust",
-    source: "Media Integrity Lab",
-    snippet: "New deepfake workflows make realistic video manipulation easier, raising the need for layered authenticity checks.",
-    date: "May 18, 2026",
-  },
-  {
-    title: "Experts warn users to verify viral media before sharing",
-    source: "Cyber Awareness Weekly",
-    snippet: "Verification specialists recommend checking sources, context, metadata, and independent reporting before resharing.",
-    date: "May 11, 2026",
-  },
-];
-
 function validateFile(file) {
   if (!file) return "No file selected. Please upload an image or video to analyze.";
   if (!allowedTypes.has(file.type)) return "Unsupported file type. Please upload JPG, PNG, WEBP, MP4, MOV, or WEBM.";
   if (file.type.startsWith("image/") && file.size > IMAGE_LIMIT) return "Image file is too large. Please upload an image under 10MB.";
   if (file.type.startsWith("video/") && file.size > VIDEO_LIMIT) return "Video file is too large. Please upload a video under 50MB.";
   return "";
+}
+
+function formatArticleDate(value) {
+  if (!value) return "Date unavailable";
+  return new Date(value).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function getRelatedArticleQuery(result, file) {
+  const mediaType = result?.mediaType || (file?.type?.startsWith("video/") ? "video" : "image");
+  const verdict = result?.label || "";
+
+  return [mediaType, verdict, "AI fake media", "deepfake detection", "image manipulation", "misinformation", "synthetic media"]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function getErrorMessage(error) {
@@ -67,6 +59,9 @@ export default function UploadSection() {
   const [result, setResult] = useState(null);
   const [toast, setToast] = useState(null);
   const [error, setError] = useState("");
+  const [relatedArticles, setRelatedArticles] = useState([]);
+  const [relatedArticlesState, setRelatedArticlesState] = useState("idle");
+  const [relatedArticlesError, setRelatedArticlesError] = useState("");
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
   const fileInputRef = useRef(null);
   const uploadToastShownRef = useRef(false);
@@ -91,6 +86,9 @@ export default function UploadSection() {
   const selectFile = (file) => {
     const validationError = validateFile(file);
     setResult(null);
+    setRelatedArticles([]);
+    setRelatedArticlesState("idle");
+    setRelatedArticlesError("");
     setUploadProgress(0);
 
     if (validationError) {
@@ -153,6 +151,9 @@ export default function UploadSection() {
     try {
       setError("");
       setResult(null);
+      setRelatedArticles([]);
+      setRelatedArticlesState("idle");
+      setRelatedArticlesError("");
       setUploadProgress(0);
       uploadToastShownRef.current = false;
       setState("uploading");
@@ -185,6 +186,25 @@ export default function UploadSection() {
         videoEnabled: response.data.videoEnabled,
       });
       setToast({ type: "success", message: "Media uploaded successfully. Analysis completed." });
+
+      try {
+        setRelatedArticlesState("loading");
+        setRelatedArticlesError("");
+        const query = getRelatedArticleQuery(response.data, selectedFile);
+        const relatedResponse = await apiClient.get("/api/news/related", {
+          params: { query, limit: 2 },
+        });
+        const articles = Array.isArray(relatedResponse.data?.articles) ? relatedResponse.data.articles.slice(0, 2) : [];
+        setRelatedArticles(articles);
+        setRelatedArticlesState("done");
+        if (!articles.length) {
+          setRelatedArticlesError("No related articles found right now.");
+        }
+      } catch {
+        setRelatedArticles([]);
+        setRelatedArticlesState("error");
+        setRelatedArticlesError("No related articles found right now.");
+      }
     } catch (requestError) {
       const message = getErrorMessage(requestError);
       setError(message);
@@ -390,17 +410,27 @@ export default function UploadSection() {
                   <h3 className="font-bold">Related AI Fake Media Articles</h3>
                 </div>
                 <div className="space-y-3">
-                  {relatedArticles.map((article) => (
+                  {relatedArticlesState === "loading" && (
+                    <div className="rounded-2xl border border-white/10 bg-black/75 p-4 text-sm text-stone-400">
+                      Loading related articles...
+                    </div>
+                  )}
+                  {relatedArticlesState !== "loading" && relatedArticlesError && (
+                    <div className="rounded-2xl border border-white/10 bg-black/75 p-4 text-sm text-stone-400">
+                      {relatedArticlesError}
+                    </div>
+                  )}
+                  {relatedArticlesState !== "loading" && relatedArticles.map((article) => (
                     <article key={article.title} className="rounded-2xl border border-white/10 bg-black/75 p-4 transition duration-300 hover:border-cyanGlow/25 hover:bg-white/[0.035]">
                       <h4 className="font-semibold leading-6 text-white">{article.title}</h4>
                       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-500">
                         <span>{article.source}</span>
-                        <span>{article.date}</span>
+                        <span>{formatArticleDate(article.publishedAt)}</span>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-stone-400">{article.snippet}</p>
-                      <button type="button" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyanGlow transition hover:text-white">
+                      {article.description && <p className="mt-2 text-sm leading-6 text-stone-400">{article.description}</p>}
+                      <a href={article.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyanGlow transition hover:text-white">
                         Read More <ExternalLink className="h-3.5 w-3.5" />
-                      </button>
+                      </a>
                     </article>
                   ))}
                 </div>

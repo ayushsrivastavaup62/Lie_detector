@@ -1,5 +1,6 @@
 import { Download, FileBadge } from "lucide-react";
 import { useState } from "react";
+import { downloadDashboardReportFromApi, getReportDownloadErrorMessage } from "../../utils/dashboardReport.js";
 
 function formatDisplayDate(value) {
   if (!value) return "Not available";
@@ -8,10 +9,21 @@ function formatDisplayDate(value) {
 
 export default function ReportVault({ reports }) {
   const [notice, setNotice] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
-  const showNotice = () => {
-    setNotice("Report download coming soon.");
-    window.setTimeout(() => setNotice(""), 2200);
+  const downloadReport = async () => {
+    try {
+      setDownloading(true);
+      setNotice("");
+      await downloadDashboardReportFromApi();
+      setNotice("Report downloaded.");
+    } catch (error) {
+      console.error("Report download failed:", error);
+      setNotice(await getReportDownloadErrorMessage(error));
+    } finally {
+      setDownloading(false);
+      window.setTimeout(() => setNotice(""), 2600);
+    }
   };
 
   return (
@@ -37,8 +49,8 @@ export default function ReportVault({ reports }) {
             </div>
             <h3 className="mt-5 text-lg font-black text-white">Report #{report.reportId}</h3>
             <p className="mt-2 text-sm capitalize text-stone-400">{report.mediaType} - Created {formatDisplayDate(report.createdAt)}</p>
-            <button type="button" onClick={showNotice} className="ghost-button mt-5 w-full px-4 py-2.5">
-              Download PDF <Download className="h-4 w-4" />
+            <button type="button" onClick={downloadReport} className="ghost-button mt-5 w-full px-4 py-2.5 disabled:cursor-not-allowed disabled:opacity-60" disabled={downloading}>
+              {downloading ? "Preparing PDF..." : "Download PDF"} <Download className="h-4 w-4" />
             </button>
           </article>
         ))}

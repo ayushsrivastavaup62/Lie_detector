@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Download, Eye, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { downloadDashboardReportFromApi, getReportDownloadErrorMessage } from "../../utils/dashboardReport.js";
 
 function formatDisplayDate(value) {
   if (!value) return "Not available";
@@ -30,10 +31,21 @@ export default function ScanHistory({ items, onDelete }) {
   const [selected, setSelected] = useState(null);
   const [notice, setNotice] = useState("");
   const [deletingId, setDeletingId] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
-  const downloadReport = () => {
-    setNotice("PDF report feature coming soon");
-    window.setTimeout(() => setNotice(""), 2200);
+  const downloadReport = async () => {
+    try {
+      setDownloading(true);
+      setNotice("");
+      await downloadDashboardReportFromApi();
+      setNotice("Report downloaded.");
+    } catch (error) {
+      console.error("Report download failed:", error);
+      setNotice(await getReportDownloadErrorMessage(error));
+    } finally {
+      setDownloading(false);
+      window.setTimeout(() => setNotice(""), 2600);
+    }
   };
 
   const deleteItem = async (id) => {
@@ -75,7 +87,7 @@ export default function ScanHistory({ items, onDelete }) {
               <span>{formatDisplayDate(item.createdAt)}</span>
               <span className="flex items-center gap-2">
                 <ActionButton label="View Result" onClick={() => setSelected(item)}><Eye className="h-4 w-4" /></ActionButton>
-                <ActionButton label="Download Report" onClick={downloadReport}><Download className="h-4 w-4" /></ActionButton>
+                <ActionButton label={downloading ? "Preparing Report" : "Download Report"} onClick={downloadReport}><Download className={`h-4 w-4 ${downloading ? "opacity-50" : ""}`} /></ActionButton>
                 <ActionButton label="Delete" onClick={() => deleteItem(item._id)}><Trash2 className={`h-4 w-4 text-roseGlow ${deletingId === item._id ? "opacity-50" : ""}`} /></ActionButton>
               </span>
             </div>
@@ -96,7 +108,7 @@ export default function ScanHistory({ items, onDelete }) {
             <p className="mt-3 text-sm text-stone-300">Verdict: {item.verdict}</p>
             <div className="mt-4 flex gap-2">
               <ActionButton label="View Result" onClick={() => setSelected(item)}><Eye className="h-4 w-4" /></ActionButton>
-              <ActionButton label="Download Report" onClick={downloadReport}><Download className="h-4 w-4" /></ActionButton>
+              <ActionButton label={downloading ? "Preparing Report" : "Download Report"} onClick={downloadReport}><Download className={`h-4 w-4 ${downloading ? "opacity-50" : ""}`} /></ActionButton>
               <ActionButton label="Delete" onClick={() => deleteItem(item._id)}><Trash2 className={`h-4 w-4 text-roseGlow ${deletingId === item._id ? "opacity-50" : ""}`} /></ActionButton>
             </div>
           </article>

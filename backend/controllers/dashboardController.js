@@ -29,6 +29,16 @@ function serializeHistoryItem(item) {
   };
 }
 
+function buildReports(history) {
+  return history.map((item, index) => ({
+    reportId: `LD-${1001 + index}`,
+    historyId: item._id,
+    aiScore: item.aiProbability,
+    mediaType: item.mediaType,
+    createdAt: item.createdAt,
+  }));
+}
+
 async function getDashboard(req, res, next) {
   try {
     const userId = req.user._id;
@@ -43,13 +53,7 @@ async function getDashboard(req, res, next) {
     ]);
 
     const history = latestHistory.map(serializeHistoryItem);
-    const reports = history.map((item, index) => ({
-      reportId: `LD-${1001 + index}`,
-      historyId: item._id,
-      aiScore: item.aiProbability,
-      mediaType: item.mediaType,
-      createdAt: item.createdAt,
-    }));
+    const reports = buildReports(history);
 
     res.json({
       success: true,
@@ -75,6 +79,49 @@ async function getDashboard(req, res, next) {
       history,
       reports,
       awarenessScore: calculateAwarenessScore({ totalScans, imagesScanned, videosScanned }),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getDashboardReport(req, res, next) {
+  try {
+    const userId = req.user?._id;
+    const [totalScans, fakeCount, realCount, imagesScanned, videosScanned, recentHistory] = await Promise.all([
+      DetectionHistory.countDocuments({ user: userId }),
+      DetectionHistory.countDocuments({ user: userId, aiProbability: { $gte: 75 } }),
+      DetectionHistory.countDocuments({ user: userId, aiProbability: { $lt: 45 } }),
+      DetectionHistory.countDocuments({ user: userId, mediaType: "image" }),
+      DetectionHistory.countDocuments({ user: userId, mediaType: "video" }),
+      DetectionHistory.find({ user: userId }).sort({ createdAt: -1 }).limit(10).lean(),
+    ]);
+
+    const recentDetections = recentHistory.map(serializeHistoryItem);
+    const generatedAt = new Date().toISOString();
+    const report = {
+      user: {
+        name: req.user?.name || "User",
+        email: req.user?.email || "",
+      },
+      summary: {
+        totalScans: totalScans || 0,
+        realCount: realCount || 0,
+        fakeCount: fakeCount || 0,
+        subscription: req.user?.plan || "free",
+        attemptsLeft: req.user?.attemptsLeft ?? 0,
+        imagesScanned: imagesScanned || 0,
+        videosScanned: videosScanned || 0,
+        videoEnabled: Boolean(req.user?.videoEnabled),
+        status: "Verification workspace active",
+      },
+      recentDetections,
+      generatedAt,
+    };
+
+    res.json({
+      success: true,
+      report,
     });
   } catch (error) {
     next(error);
@@ -114,4 +161,5 @@ async function deleteHistoryItem(req, res, next) {
 module.exports = {
   deleteHistoryItem,
   getDashboard,
+  getDashboardReport,
 };

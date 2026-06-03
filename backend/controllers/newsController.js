@@ -3,6 +3,7 @@ const axios = require("axios");
 const GNEWS_SEARCH_URL = "https://gnews.io/api/v4/search";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const MAX_TRENDING_ARTICLES = 18;
+const MAX_RELATED_ARTICLES = 2;
 const TRENDING_QUERIES = [
   "deepfake AI misinformation",
   "AI generated fake news",
@@ -335,4 +336,51 @@ async function getTrendingNews(_req, res) {
   }
 }
 
-module.exports = { getTrendingNews };
+async function getRelatedNews(req, res) {
+  try {
+    const apiKey = process.env.GNEWS_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({
+        success: false,
+        articles: [],
+        message: "GNews API key is missing. Add GNEWS_API_KEY to backend/.env.",
+      });
+      return;
+    }
+
+    const requestedLimit = Number.parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), MAX_RELATED_ARTICLES) : MAX_RELATED_ARTICLES;
+    const query = String(req.query.query || "").trim();
+    const safeQuery = query || "AI fake media deepfake detection image manipulation misinformation synthetic media";
+    const searchQuery = `(${safeQuery}) AI fake media deepfake detection misinformation`;
+
+    const articles = await fetchTrendingArticlesForQuery(apiKey, searchQuery);
+    const normalizedArticles = dedupeArticles(articles)
+      .sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+      .slice(0, limit)
+      .map(normalizeArticle);
+
+    res.json({
+      success: true,
+      articles: normalizedArticles,
+      message: normalizedArticles.length ? "Related news loaded from GNews." : "No related articles found right now.",
+    });
+  } catch (error) {
+    console.error(
+      "[GNews] Related endpoint error",
+      JSON.stringify({
+        message: error.message,
+        status: error.response?.status || null,
+        response: error.response?.data || null,
+      })
+    );
+
+    res.status(502).json({
+      success: false,
+      articles: [],
+      message: "No related articles found right now.",
+    });
+  }
+}
+
+module.exports = { getRelatedNews, getTrendingNews };
