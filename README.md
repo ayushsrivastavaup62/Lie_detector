@@ -1,8 +1,78 @@
 # Lie_detector
 
-AI-powered platform for detecting potentially AI-generated images and videos. Features confidence-based analysis, fake media awareness, trending misinformation insights, protected dashboards, Razorpay plan upgrades, and contact feedback delivery.
+AI-powered media verification platform that analyzes images and videos for potential AI generation. The system provides confidence-based authenticity scoring, misinformation awareness, detection history tracking, subscription management, and downloadable verification reports through a secure full-stack architecture. Features confidence-based analysis, fake media awareness, trending misinformation insights, protected dashboards, Razorpay plan upgrades, and contact feedback delivery.
 
 ## Local Frontend
+## Live Demo
+
+Frontend: https://your-vercel-app.vercel.app
+
+Backend Health:
+https://lie-detector-backend-qjrm.onrender.com/health
+
+## Features
+
+- AI Image Detection
+- AI Video Detection
+- Confidence-Based Analysis
+- Detection History
+- Trending Misinformation Feed
+- User Authentication (JWT)
+- Razorpay Subscription Plans
+- Dashboard Analytics
+- Feedback & Contact System
+- Downloadable Verification Reports
+
+- ## Tech Stack
+
+Frontend:
+- React
+- Vite
+- Tailwind CSS
+- Axios
+
+Backend:
+- Node.js
+- Express.js
+- MongoDB Atlas
+- JWT Authentication
+- Nodemailer
+
+Integrations:
+- Sightengine API
+- GNews API
+- Razorpay
+
+  
+  Frontend (React)
+      |
+      v
+Backend (Express API)
+      |
+      +--> MongoDB Atlas
+      |
+      +--> SightEngine
+      |
+      +--> GNews
+      |
+      +--> Razorpay
+  
+ #screenshots
+  #landing_page <img width="1023" height="598" alt="image" src="https://github.com/user-attachments/assets/8a45d7d3-0383-406e-a8c2-e0cc2fb86fbd" />
+  #upload_section <img width="862" height="585" alt="image" src="https://github.com/user-attachments/assets/ae7042a6-4c4d-4418-9d9f-bf01b949ac92" />
+  #dashboard ![Uploading image.png…]()
+  
+  
+
+
+
+
+  ## Future Roadmap
+- Deepfake Heatmap Visualization
+- Explainable AI Detection
+- Browser Extension
+- Verification Certificate System
+- Public API Access
 
 From the project root:
 
@@ -33,6 +103,7 @@ npm install
 copy .env.example .env
 npm run dev
 ```
+
 
 Backend default port is `5000` unless `PORT` is set.
 
