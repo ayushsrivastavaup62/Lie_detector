@@ -31,13 +31,29 @@ const requiredEnvVars = [
 function getAllowedOrigins() {
   return [
     "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    ...(process.env.FRONTEND_URL || "")
-      .split(",")
-      .map((origin) => origin.trim())
-      .filter(Boolean),
+    "https://lie-detector-xi.vercel.app",
   ];
 }
+
+const corsOptions = {
+  origin(origin, callback) {
+    const allowedOrigins = getAllowedOrigins();
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    const error = new Error(`CORS origin not allowed: ${origin}`);
+    error.statusCode = 403;
+    error.publicMessage = "CORS origin not allowed.";
+    callback(error);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
+};
 
 function validateStartupEnv() {
   const missingVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
@@ -209,23 +225,8 @@ async function shutdown(signal) {
   }
 }
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      const allowedOrigins = getAllowedOrigins();
-
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      const error = new Error("CORS origin not allowed");
-      error.statusCode = 403;
-      error.publicMessage = "CORS origin not allowed.";
-      callback(error);
-    },
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json({ limit: "1mb" }));
 app.use("/api", authRoutes);
