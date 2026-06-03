@@ -40,7 +40,7 @@ export default function ContactForm() {
 
     try {
       setSubmitting(true);
-      const response = await apiClient.post("/contact", payload);
+      const response = await apiClient.post("/api/contact", payload);
       if (!response.data?.success) {
         throw new Error(response.data?.message || "Unable to send feedback. Please try again.");
       }

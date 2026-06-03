@@ -94,7 +94,7 @@ export default function Dashboard() {
     try {
       setLoadingDashboard(true);
       setError("");
-      const response = await apiClient.get("/dashboard");
+      const response = await apiClient.get("/api/dashboard");
 
       if (!response.data?.success) {
         throw new Error("Unable to load dashboard data.");
@@ -114,7 +114,7 @@ export default function Dashboard() {
   }, [loadDashboard]);
 
   const deleteHistoryItem = async (id) => {
-    await apiClient.delete(`/dashboard/history/${id}`);
+    await apiClient.delete(`/api/dashboard/history/${id}`);
     await loadDashboard();
   };
 

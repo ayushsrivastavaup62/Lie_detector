@@ -88,7 +88,7 @@ export default function Pricing() {
       setPlanError("");
       await loadRazorpayCheckout();
 
-      const orderResponse = await apiClient.post("/payment/create-order", { plan: selectedPlan.id });
+      const orderResponse = await apiClient.post("/api/payment/create-order", { plan: selectedPlan.id });
       const order = orderResponse.data;
 
       const checkout = new window.Razorpay({
@@ -107,7 +107,7 @@ export default function Pricing() {
         },
         handler: async (paymentResponse) => {
           try {
-            const verifyResponse = await apiClient.post("/payment/verify", {
+            const verifyResponse = await apiClient.post("/api/payment/verify", {
               plan: selectedPlan.id,
               razorpay_order_id: paymentResponse.razorpay_order_id,
               razorpay_payment_id: paymentResponse.razorpay_payment_id,

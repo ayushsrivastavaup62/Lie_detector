@@ -157,7 +157,7 @@ export default function UploadSection() {
       uploadToastShownRef.current = false;
       setState("uploading");
 
-      const response = await apiClient.post("/detect", formData, {
+      const response = await apiClient.post("/api/detect", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           if (!progressEvent.total) return;

@@ -97,7 +97,7 @@ export default function Trending() {
       try {
         setLoading(true);
         setErrorMessage("");
-        const response = await apiClient.get("/trending-news");
+        const response = await apiClient.get("/api/trending-news");
         const data = response.data;
         const liveArticles = Array.isArray(data) ? data : data.articles;
         const fallbackUsed = Boolean(data.fallback || data.success === false);

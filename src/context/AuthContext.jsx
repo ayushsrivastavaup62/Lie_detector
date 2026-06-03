@@ -1,7 +1,7 @@
 import axios from "axios";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const TOKEN_KEY = "lieDetectorToken";
 const AuthContext = createContext(null);
 
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
 
     try {
       setLoading(true);
-      const response = await apiClient.get("/auth/me");
+      const response = await apiClient.get("/api/auth/me");
       setToken(storedToken);
       setUser(normalizeUser(response.data.user));
       return response.data.user;
@@ -93,7 +93,7 @@ export function AuthProvider({ children }) {
 
   const register = async ({ fullName, email, password }) => {
     try {
-      const response = await apiClient.post("/auth/register", {
+      const response = await apiClient.post("/api/auth/register", {
         name: fullName,
         email,
         password,
@@ -107,7 +107,7 @@ export function AuthProvider({ children }) {
 
   const login = async ({ email, password }) => {
     try {
-      const response = await apiClient.post("/auth/login", { email, password });
+      const response = await apiClient.post("/api/auth/login", { email, password });
       saveSession(response.data.token, response.data.user);
       return response.data.user;
     } catch (error) {
@@ -118,7 +118,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       if (getStoredToken()) {
-        await apiClient.post("/auth/logout");
+        await apiClient.post("/api/auth/logout");
       }
     } catch {
       // Frontend logout should still clear a stale or expired token.

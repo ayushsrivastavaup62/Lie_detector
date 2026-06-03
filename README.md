@@ -22,7 +22,7 @@ npm.cmd run dev
 Frontend environment:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_URL=https://lie-detector-backend-qjrm.onrender.com
 ```
 
 ## Local Backend
@@ -41,7 +41,7 @@ Backend default port is `5000` unless `PORT` is set.
 Frontend:
 
 ```env
-VITE_API_BASE_URL=
+VITE_API_URL=
 ```
 
 Backend:
@@ -72,7 +72,7 @@ Frontend on Vercel:
 3. Set Framework Preset to `Vite`.
 4. Use build command `npm run build`.
 5. Use output directory `dist`.
-6. Add `VITE_API_BASE_URL=https://your-render-backend.onrender.com/api`.
+6. Add `VITE_API_URL=https://lie-detector-backend-qjrm.onrender.com`.
 7. Keep `vercel.json` committed so React Router routes fall back to `index.html`.
 8. Deploy and verify the browser title `Lie Detector | AI Media Scanner` and `/favicon.svg`.
 
@@ -101,7 +101,7 @@ Production verification:
 4. Upload image sends media through the backend detection endpoint.
 5. Detection decrements attempts and writes history.
 6. Dashboard loads only for authenticated users.
-7. Trending loads from the backend through `VITE_API_BASE_URL`.
+7. Trending loads from the backend through `VITE_API_URL`.
 8. Contact form sends feedback through Nodemailer.
 9. Razorpay creates orders and verifies signatures on the backend.
 10. History, dashboard, payment, detection, and user routes reject unauthenticated requests.
