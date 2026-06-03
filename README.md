@@ -58,9 +58,12 @@ Backend (Express API)
       +--> Razorpay
   
  #screenshots
-  #landing_page <img width="1023" height="598" alt="image" src="https://github.com/user-attachments/assets/8a45d7d3-0383-406e-a8c2-e0cc2fb86fbd" />
-  #upload_section <img width="862" height="585" alt="image" src="https://github.com/user-attachments/assets/ae7042a6-4c4d-4418-9d9f-bf01b949ac92" />
-  #dashboard ![Uploading image.png…]()
+  #landing_page  <img width="862" height="585" alt="image" src="https://github.com/user-attachments/assets/ae7042a6-4c4d-4418-9d9f-bf01b949ac92" />
+  
+  #upload_section <img width="1023" height="598" alt="image" src="https://github.com/user-attachments/assets/8a45d7d3-0383-406e-a8c2-e0cc2fb86fbd" />
+ 
+  #dashboard <img width="853" height="592" alt="image" src="https://github.com/user-attachments/assets/d4660a8e-399f-4526-a2b9-ac8c1502e2f8" />
+
   
   
 
