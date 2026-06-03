@@ -1,12 +1,21 @@
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
-import { useState } from "react";
-import { apiClient } from "../context/AuthContext.jsx";
+import { useEffect, useState } from "react";
+import { apiClient, useAuth } from "../context/AuthContext.jsx";
 
 export default function ContactForm() {
+  const { user } = useAuth();
   const [toast, setToast] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", feedback: "" });
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      name: current.name || user?.name || user?.fullName || "",
+      email: current.email || user?.email || "",
+    }));
+  }, [user]);
 
   const updateField = (field) => (event) => {
     setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -19,7 +28,9 @@ export default function ContactForm() {
     const payload = {
       name: form.name.trim(),
       email: form.email.trim(),
-      message: form.feedback.trim(),
+      message: form.message.trim(),
+      authenticatedName: user?.name || user?.fullName || "",
+      authenticatedEmail: user?.email || "",
     };
 
     if (!payload.name || !payload.email || !payload.message) {
@@ -29,8 +40,11 @@ export default function ContactForm() {
 
     try {
       setSubmitting(true);
-      await apiClient.post("/contact", payload);
-      setForm({ name: "", email: "", feedback: "" });
+      const response = await apiClient.post("/contact", payload);
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || "Unable to send feedback. Please try again.");
+      }
+      setForm((current) => ({ ...current, message: "" }));
       setToast({ type: "success", message: "Feedback submitted successfully." });
     } catch {
       setToast({ type: "error", message: "Unable to send feedback. Please try again." });
@@ -41,6 +55,11 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="glass-card self-start rounded-3xl p-6 sm:p-8">
+      <div className="mb-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amberGlow">Feedback</p>
+        <h2 className="mt-2 text-2xl font-black text-white">Send us a note</h2>
+        <p className="mt-2 text-sm leading-6 text-stone-400">Your account details are prefilled when available, and you can edit them before sending.</p>
+      </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium text-stone-300">
           Name
@@ -52,8 +71,8 @@ export default function ContactForm() {
         </label>
       </div>
       <label className="mt-5 grid gap-2 text-sm font-medium text-stone-300">
-        Feedback
-        <textarea value={form.feedback} onChange={updateField("feedback")} className="min-h-36 rounded-2xl border border-white/10 bg-black/75 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/45" placeholder="Tell us what would make Lie_detector more useful." required />
+        Message
+        <textarea value={form.message} onChange={updateField("message")} className="min-h-36 resize-y rounded-2xl border border-white/10 bg-black/75 px-4 py-3 text-white outline-none transition focus:border-cyanGlow/45" placeholder="Tell us what would make Lie_detector more useful." required />
       </label>
       <button type="submit" className="glow-button mt-6 disabled:cursor-not-allowed disabled:opacity-60" disabled={submitting}>
         {submitting ? "Submitting..." : "Submit Feedback"} <Send className="h-4 w-4" />

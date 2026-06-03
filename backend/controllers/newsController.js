@@ -3,7 +3,6 @@ const axios = require("axios");
 const GNEWS_SEARCH_URL = "https://gnews.io/api/v4/search";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const MAX_TRENDING_ARTICLES = 18;
-const MIN_PROGRESSIVE_ARTICLES = 9;
 const TRENDING_QUERIES = [
   "deepfake AI misinformation",
   "AI generated fake news",
@@ -147,10 +146,8 @@ function dedupeArticles(articles) {
 
 function buildTrendingArticles(articles) {
   const dedupedLiveArticles = dedupeArticles(articles).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
-  const backfilledArticles =
-    dedupedLiveArticles.length >= MIN_PROGRESSIVE_ARTICLES ? dedupedLiveArticles : dedupeArticles([...dedupedLiveArticles, ...FALLBACK_ARTICLES]);
 
-  return backfilledArticles.slice(0, MAX_TRENDING_ARTICLES).map(normalizeArticle);
+  return dedupedLiveArticles.slice(0, MAX_TRENDING_ARTICLES).map(normalizeArticle);
 }
 
 async function fetchTrendingArticlesForQuery(apiKey, query) {
@@ -255,7 +252,7 @@ async function getTrendingNews(_req, res) {
         queries: TRENDING_QUERIES,
         receivedCount: articles.length,
         dedupedCount: normalizedArticles.length,
-        backfilled: normalizedArticles.length > dedupeArticles(articles).length,
+        fallbackUsed: false,
       })
     );
 

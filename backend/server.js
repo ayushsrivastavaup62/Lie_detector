@@ -73,6 +73,10 @@ app.use("/api", detectionRoutes);
 app.use("/api", newsRoutes);
 app.use("/api", paymentRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Backend is running successfully 🚀");
+});
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "Lie_detector backend" });
 });

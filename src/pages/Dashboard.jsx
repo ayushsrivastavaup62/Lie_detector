@@ -7,7 +7,6 @@ import DashboardHeader from "../components/dashboard/DashboardHeader.jsx";
 import OverviewCards from "../components/dashboard/OverviewCards.jsx";
 import ReportVault from "../components/dashboard/ReportVault.jsx";
 import ScanHistory from "../components/dashboard/ScanHistory.jsx";
-import SubscriptionPanel from "../components/dashboard/SubscriptionPanel.jsx";
 import UsageAnalytics from "../components/dashboard/UsageAnalytics.jsx";
 import { apiClient, useAuth } from "../context/AuthContext.jsx";
 
@@ -121,8 +120,8 @@ export default function Dashboard() {
 
   return (
     <section className="container-shell py-10 sm:py-14">
-      <div className="space-y-6">
-        <DashboardHeader name={displayName} />
+      <div className="space-y-5 sm:space-y-6">
+        <DashboardHeader attemptsLeft={data.overview.attemptsLeft} currentPlan={currentPlan} name={displayName} />
         {loadingDashboard ? <DashboardSkeleton /> : <OverviewCards overview={{ ...data.overview, currentPlan }} />}
 
         {error && (
@@ -136,7 +135,7 @@ export default function Dashboard() {
           <UsageAnalytics analytics={data.analytics} />
         </motion.div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
+        <div className="grid items-start gap-6 xl:grid-cols-[1.35fr_0.85fr]">
           <motion.div {...sectionMotion}>
             <ScanHistory items={data.history} onDelete={deleteHistoryItem} />
           </motion.div>
@@ -145,17 +144,14 @@ export default function Dashboard() {
               <AccountInfo account={{ ...data.account, plan: currentPlan }} />
             </motion.div>
             <motion.div {...sectionMotion}>
-              <SubscriptionPanel plan={data.overview.currentPlan} />
+              <AwarenessScore score={data.awarenessScore} />
             </motion.div>
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="grid gap-6">
           <motion.div {...sectionMotion}>
             <ReportVault reports={data.reports} />
-          </motion.div>
-          <motion.div {...sectionMotion}>
-            <AwarenessScore score={data.awarenessScore} />
           </motion.div>
         </div>
       </div>

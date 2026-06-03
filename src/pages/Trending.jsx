@@ -100,6 +100,7 @@ export default function Trending() {
         const response = await apiClient.get("/trending-news");
         const data = response.data;
         const liveArticles = Array.isArray(data) ? data : data.articles;
+        const fallbackUsed = Boolean(data.fallback || data.success === false);
 
         if (!Array.isArray(liveArticles) || !liveArticles.length) {
           throw new Error(data.message || "Live news could not be loaded right now.");
@@ -110,8 +111,8 @@ export default function Trending() {
           setVisibleCount(3);
           setHasLoadedMore(false);
           console.log("[Trending] total articles received:", liveArticles.length);
-          console.log("[Trending] current visible count:", 3);
-          setFallbackMessage(data.success === false ? data.message || "Showing fallback trending articles." : "");
+          console.log("[Trending] fallback used:", fallbackUsed);
+          setFallbackMessage(fallbackUsed ? data.message || "Showing fallback trending articles." : "");
           setErrorMessage("");
         }
       } catch (error) {
@@ -120,7 +121,7 @@ export default function Trending() {
           setVisibleCount(3);
           setHasLoadedMore(false);
           console.log("[Trending] total articles received:", sampleArticles.length);
-          console.log("[Trending] current visible count:", 3);
+          console.log("[Trending] fallback used:", true);
           setErrorMessage(error.message || "Live news could not be loaded right now.");
           setFallbackMessage("Live news could not be loaded right now. Showing sample articles.");
         }
@@ -203,12 +204,7 @@ export default function Trending() {
             className="inline-flex items-center justify-center rounded-full border border-cyanGlow/30 bg-cyanGlow/10 px-6 py-3 text-sm font-bold text-cyanGlow shadow-[0_0_24px_rgba(134,217,232,0.10)] transition duration-300 hover:-translate-y-0.5 hover:border-cyanGlow/55 hover:bg-cyanGlow/15 hover:text-white hover:shadow-[0_0_34px_rgba(134,217,232,0.20)] focus:outline-none focus:ring-2 focus:ring-cyanGlow/35 focus:ring-offset-2 focus:ring-offset-carbon"
             onClick={() => {
               setHasLoadedMore(true);
-              setVisibleCount((prev) => {
-                const nextVisibleCount = prev + 3;
-                console.log("[Trending] total articles received:", articles.length);
-                console.log("[Trending] current visible count:", nextVisibleCount);
-                return nextVisibleCount;
-              });
+              setVisibleCount((prev) => Math.min(prev + ARTICLES_PER_LOAD, articles.length));
             }}
           >
             Read More Articles
