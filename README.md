@@ -5,7 +5,7 @@ AI-powered media verification platform that analyzes images and videos for poten
 ## Local Frontend
 ## Live Demo
 
-Frontend: https://your-vercel-app.vercel.app
+Frontend: https://lie-detector-xi.vercel.app/
 
 Backend Health:
 https://lie-detector-backend-qjrm.onrender.com/health
