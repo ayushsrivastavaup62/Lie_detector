@@ -34,7 +34,7 @@ export default function Footer() {
             AI-powered media authenticity scanner helping users detect fake images, deepfake videos, and misinformation.
           </p>
           <p className="mt-5 text-sm font-semibold text-stone-300">
-            Made by <a href="ayush-portfolio-ten-omega.vercel.app" >Ayush Srivastava</a> in collaboration with Artificial Intelligence
+            Made by <a href="https://ayush-portfolio-ten-omega.vercel.app" className="text-cyanGlow underline" target="_blank" rel="noreferrer">Ayush Srivastava</a> in collaboration with Artificial Intelligence
           </p>
         </div>
 
